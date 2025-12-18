@@ -3,10 +3,10 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = '변경해도 되고, 개발용이면 그냥 둬도 됨'
+SECRET_KEY = '임시'
 DEBUG = True
 
-ALLOWED_HOSTS = []  # 나중에 배포 시 수정
+ALLOWED_HOSTS = ['doyoung.pythonanywhere.com']  
 
 INSTALLED_APPS = [
     'django.contrib.admin',
