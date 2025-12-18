@@ -10,7 +10,7 @@ public class ApiClient {
     public static Retrofit getClient(String token) {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
-                    .baseUrl("http://10.0.2.2:8000/api/") // 에뮬레이터 기준
+                    .baseUrl("http://10.0.2.2:8000/") // 에뮬레이터 기준
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
