@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#F9FAFB"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -10,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Header -->
+        <!-- 1. Header -->
         <LinearLayout
             android:gravity="center_vertical"
             android:layout_width="match_parent"
@@ -20,12 +21,14 @@
             <ImageView
                 android:src="@drawable/ic_back"
                 android:layout_width="30dp"
-                android:layout_height="30dp" />
+                android:layout_height="30dp"
+                app:tint="#1F2937"/>
 
             <TextView
                 android:text="12월 학습 현황"
                 android:textStyle="bold"
                 android:textSize="18sp"
+                android:textColor="#111827"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:layout_width="0dp"
@@ -34,25 +37,171 @@
             <ImageView
                 android:src="@drawable/ic_share"
                 android:layout_width="24dp"
-                android:layout_height="24dp" />
+                android:layout_height="24dp"
+                app:tint="#1F2937"/>
         </LinearLayout>
 
-        <!-- Calendar Section -->
+        <!-- 2. [NEW] Status Card (검은색 공부 현황 카드) -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            app:cardBackgroundColor="#111827"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="24dp"
+                android:orientation="vertical">
+
+                <!-- 카드 헤더: 아이콘 + 텍스트 + 뱃지 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- 시계 아이콘 (백그라운드 틴트 대신 단순화) -->
+                    <ImageView
+                        android:src="@drawable/ic_clock"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        app:tint="#4ADE80"/>
+
+                    <TextView
+                        android:text="오늘의 학습"
+                        android:textColor="#F3F4F6"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"/>
+
+                    <!-- 실시간 뱃지 -->
+                    <TextView
+                        android:text="● 실시간 측정 중"
+                        android:textSize="12sp"
+                        android:textColor="#4ADE80"
+                        android:background="#1A4ADE80"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <!-- 시간 표시 (57 / 60분) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal"
+                    android:baselineAligned="true">
+
+                    <TextView
+                        android:text="57"
+                        android:textSize="48sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:text="/ 60분"
+                        android:textSize="20sp"
+                        android:textColor="#9CA3AF"
+                        android:layout_marginStart="8dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <!-- 진행률 텍스트 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:text="95% 달성"
+                        android:textColor="#4ADE80"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:text="목표까지 3분"
+                        android:textColor="#9CA3AF"
+                        android:textSize="13sp"
+                        android:gravity="end"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <!-- 프로그레스 바 -->
+                <ProgressBar
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:layout_marginTop="8dp"
+                    android:progress="95"
+                    android:progressTint="#4ADE80"
+                    android:backgroundTint="#374151"
+                    android:indeterminate="false"
+                    android:max="100"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 3. Calendar Section -->
         <LinearLayout
             android:orientation="vertical"
-            android:layout_marginTop="20dp"
-            android:padding="20dp"
+            android:layout_marginTop="10dp"
+            android:padding="24dp"
             android:background="@drawable/rounded_white"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <TextView
-                android:text="Calendar"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="10dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:src="@drawable/ic_calendar"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    app:tint="#15803d"
+                    android:background="#DCFCE7"
+                    android:padding="4dp"/>
+
+                <TextView
+                    android:text="Calendar"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1F2937"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:text="2023.12"
+                    android:textSize="12sp"
+                    android:textColor="#6B7280"
+                    android:background="#F3F4F6"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="4dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
 
             <GridLayout
                 android:id="@+id/calendarGrid"
@@ -61,19 +210,27 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
-        <!-- Daily Report Card -->
+        <!-- 4. Daily Report Card -->
         <include
-            layout="@layout/component_daily_report" />
+            layout="@layout/component_daily_report"
+            android:layout_marginTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-        <!-- Button: 오늘의 공부 모습 -->
+        <!-- 5. Button: 오늘의 공부 모습 -->
         <Button
             android:id="@+id/btnGallery"
             android:text="나의 공부 모습 보러가기"
             android:backgroundTint="#16A34A"
             android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="16sp"
             android:layout_marginTop="20dp"
+            android:layout_marginBottom="30dp"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="60dp"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
             android:gravity="center" />
     </LinearLayout>
 

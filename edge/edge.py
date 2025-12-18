@@ -16,6 +16,8 @@ def write_log(message):
 
 LOW_BRIGHTNESS_THRESHOLD = 40
 MOTION_THRESHOLD = 25
+BOOK_CONF_THRESHOLD = 0.25
+BOOK_MEMORY_SEC = 10  # 최근 10초 안에 book이 한 번이라도 감지되면 OK
 
 
 def is_low_brightness(frame):
@@ -58,16 +60,17 @@ def detect_person_and_book(results):
 
         if label == 0:   # person
             has_person = True
-        if label == 73:  # book
+
+        # 🔽 book 신뢰도 임계값 완화 적용
+        if label == 73 and conf > BOOK_CONF_THRESHOLD:  # book
             has_book = True
 
-    return has_person and has_book
+    return has_person, has_book
 
 
 def main():
     # ------------------------------------
     # 서버 인증 (JWT)
-    # Edge는 서버에 먼저 접속하는 클라이언트 역할
     # ------------------------------------
     access_token = get_access_token()
     if not access_token:
@@ -79,12 +82,14 @@ def main():
     # ------------------------------------
     # 상태 관리 변수
     # ------------------------------------
-    studying = False       
+    studying = False
     session_id = None
-    detected_start_time = None 
-    lost_start_time = None  
-    last_capture_time = 0    
-    prev_frame = None      
+    detected_start_time = None
+    lost_start_time = None
+    last_capture_time = 0
+    prev_frame = None
+    last_book_detected_time = None
+
     write_log("📷 Edge 시작")
     print("📷 웹캠 시작!")
 
@@ -110,9 +115,20 @@ def main():
 
         # YOLO 추론 (프레임 단위 연산, 서버 요청 없음)
         results = model(frame)
-        detected = detect_person_and_book(results)
+        has_person, has_book = detect_person_and_book(results)
 
         now = time.time()
+
+        # 🔽 book 감지 시각 기록
+        if has_book:
+            last_book_detected_time = now
+
+        # 🔽 person 필수 + book 보조 조건
+        detected = (
+            has_person and
+            last_book_detected_time is not None and
+            now - last_book_detected_time <= BOOK_MEMORY_SEC
+        )
 
         # ------------------------------------
         # 1️⃣ 공부 시작 판별 로직
@@ -156,7 +172,7 @@ def main():
                 if now - lost_start_time >= MIN_STUDY_DETECTION_SEC:
                     print("🛑 공부 종료 감지 → 서버 End 요청")
 
-                    study_end(access_token) 
+                    study_end(access_token)
                     studying = False
                     session_id = None
                     lost_start_time = None
