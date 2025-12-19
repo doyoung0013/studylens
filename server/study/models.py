@@ -23,7 +23,11 @@ class StudySession(models.Model):
         """
         if self.end_time is None:
             return None
-        return int((self.end_time - self.start_time).total_seconds())
+
+        seconds = int((self.end_time - self.start_time).total_seconds())
+
+        # 임시 보정 (최소 3분)
+        return max(seconds, 180)
 
 
 class StudyImage(models.Model):
