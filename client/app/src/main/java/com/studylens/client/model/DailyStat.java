@@ -4,9 +4,9 @@ import com.google.gson.annotations.SerializedName;
 
 public class DailyStat {
 
-    @SerializedName("day")
-    public int day;
+    @SerializedName("date")
+    public String date;   // "2025-12-19"
 
-    @SerializedName("total_seconds")
-    public int total_seconds;
+    @SerializedName("duration_seconds")
+    public int durationSeconds;
 }

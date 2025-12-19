@@ -44,7 +44,7 @@
                 app:tint="#1F2937"/>
         </LinearLayout>
 
-        <!-- 2. Status Card -->
+        <!-- 2. 오늘의 학습 -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,11 +87,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:orientation="horizontal"
-                    android:baselineAligned="true">
+                    android:orientation="horizontal">
 
+                    <!-- 서버 연동 -->
                     <TextView
-                        android:text="57"
+                        android:id="@+id/tvTodayMinutes"
+                        android:text="9"
                         android:textSize="52sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
@@ -107,21 +108,21 @@
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
 
+                <!-- 서버 연동 -->
                 <ProgressBar
+                    android:id="@+id/progressToday"
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
                     android:layout_height="8dp"
                     android:layout_marginTop="12dp"
-                    android:progress="95"
+                    android:max="60"
+                    android:progress="0"
                     android:progressDrawable="@drawable/progress_custom"
-                    android:progressTint="#4ADE80"
-                    android:backgroundTint="#374151"
-                    android:indeterminate="false"
-                    android:max="100"/>
+                    android:backgroundTint="#374151"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- 3. Calendar Section -->
+        <!-- 3. Calendar -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -174,23 +175,64 @@
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
 
-                <!-- 요일 Header -->
+                <!-- 요일 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:layout_marginBottom="12dp">
-                    <TextView android:text="일" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
-                    <TextView android:text="월" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
-                    <TextView android:text="화" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
-                    <TextView android:text="수" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
-                    <TextView android:text="목" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
-                    <TextView android:text="금" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
-                    <TextView android:text="토" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="12sp" android:textColor="#9CA3AF"/>
+                    <TextView
+                        android:text="일"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:text="월"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:text="화"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:text="수"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:text="목"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:text="금"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:text="토"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"/>
+
                 </LinearLayout>
 
-                <!-- ★ ID 부활: calendarGrid ★ -->
-                <!-- 이 LinearLayout 안에 날짜들이 들어있으므로, 자바에서 탐색 가능합니다 -->
+                <!-- 날짜 Grid -->
                 <LinearLayout
                     android:id="@+id/calendarGrid"
                     android:orientation="vertical"
@@ -198,91 +240,159 @@
                     android:layout_height="wrap_content">
 
                     <!-- Week 1 -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="1" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="2" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="3" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="4" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="5" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="6" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"/>
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <TextView
+                                android:text="1"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:gravity="center"
+                                android:layout_gravity="center"/>
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <TextView
+                                android:text="2"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:gravity="center"
+                                android:layout_gravity="center"/>
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <TextView
+                                android:text="3"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:gravity="center"
+                                android:layout_gravity="center"/>
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <TextView
+                                android:text="4"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:gravity="center"
+                                android:layout_gravity="center"/>
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <TextView
+                                android:text="5"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:gravity="center"
+                                android:layout_gravity="center"/>
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+                            <TextView
+                                android:text="6"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:gravity="center"
+                                android:layout_gravity="center"/>
+                        </FrameLayout>
                     </LinearLayout>
 
                     <!-- Week 2 -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="7" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="8" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="9" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="10" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="11" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="12" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="13" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="7"  android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="8"  android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="9"  android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="10" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="11" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="12" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="13" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
                     </LinearLayout>
 
                     <!-- Week 3 -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="14" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="15" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="16" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_active" android:textColor="#15803d" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="17" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="18" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content">
-                            <TextView android:text="19" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:background="@drawable/bg_day_selected" android:textColor="#FFFFFF" android:textStyle="bold"/>
-                        </FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="20" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="14" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="15" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="16" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="17" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="18" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="19" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="20" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
                     </LinearLayout>
 
                     <!-- Week 4 -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="21" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="22" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="23" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="24" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="25" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#EF4444" android:textStyle="bold"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="26" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="27" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="21" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="22" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="23" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="24" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="25" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="26" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="27" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
                     </LinearLayout>
 
                     <!-- Week 5 -->
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="28" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="29" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="30" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"><TextView android:text="31" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center" android:textColor="#4B5563"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-                        <FrameLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
-                    </LinearLayout>
-                </LinearLayout>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="28" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="29" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="30" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="31" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+                    </LinearLayout>
+
+
+                </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- 4. Daily Report Card -->
-        <include
-            layout="@layout/component_daily_report"
-            android:layout_marginTop="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <!-- 5. Button -->
         <Button
             android:id="@+id/btnGallery"
             android:text="나의 공부 모습 보러가기"
-            android:backgroundTint="#16A34A"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="40dp"
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:elevation="4dp"
-            android:stateListAnimator="@null"
-            android:gravity="center"
-            android:drawableEnd="@drawable/ic_back"
-            android:drawableTint="#FFFFFF"
-            android:paddingHorizontal="24dp"/>
-
+            android:layout_marginTop="20dp"/>
     </LinearLayout>
 </ScrollView>

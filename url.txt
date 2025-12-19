@@ -1,0 +1,4 @@
+서비스 URL :  https://doyoung.pythonanywhere.com/
+( 서비스 test 유저 아이디 : testuser , 비밀번호 : 1234 )
+
+소스코드 git 주소 : https://github.com/doyoung0013/studylens
