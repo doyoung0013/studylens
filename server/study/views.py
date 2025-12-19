@@ -66,8 +66,8 @@ class ImageUploadView(APIView):
     POST /image/upload/
     - multipart/form-data로 이미지 업로드
     - 필드:
-      - image: 파일 (필수)
-      - session_id: 선택 (연결하고 싶으면)
+    - image: 파일 (필수)
+    - session_id: 선택 (연결하고 싶으면)
     """
     permission_classes = [IsAuthenticated]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]

@@ -4,12 +4,16 @@ import time
 import numpy as np
 from edge_utils import get_access_token, study_start, study_end, upload_image
 from config import DETECTION_THRESHOLD, MIN_STUDY_DETECTION_SEC, CAPTURE_INTERVAL_SEC
+import warnings
 
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 LOG_FILE = "edge.log"
 
 def write_log(message):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    log = f"[{timestamp}] {message}"
+    print(log)
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(f"[{timestamp}] {message}\n")
 
@@ -18,6 +22,8 @@ LOW_BRIGHTNESS_THRESHOLD = 40
 MOTION_THRESHOLD = 25
 BOOK_CONF_THRESHOLD = 0.25
 BOOK_MEMORY_SEC = 10  # 최근 10초 안에 book이 한 번이라도 감지되면 OK
+LAPTOP_CONF_THRESHOLD = 0.25
+STUDY_OBJECT_MEMORY_SEC = 180  # book 또는 laptop 최근 감지 허용 시간 (3분)
 
 
 def is_low_brightness(frame):
@@ -54,7 +60,7 @@ def detect_person_and_book(results):
     """
     has_person = False
     has_book = False
-
+    has_laptop = False  
     for *box, conf, cls in results.xyxy[0]:
         label = int(cls)
 
@@ -65,8 +71,10 @@ def detect_person_and_book(results):
         if label == 73 and conf > BOOK_CONF_THRESHOLD:  # book
             has_book = True
 
-    return has_person, has_book
+        if label == 63 and conf > LAPTOP_CONF_THRESHOLD:  # laptop
+            has_laptop = True
 
+    return has_person, has_book, has_laptop 
 
 def main():
     # ------------------------------------
@@ -89,6 +97,7 @@ def main():
     last_capture_time = 0
     prev_frame = None
     last_book_detected_time = None
+    last_study_object_detected_time = None
 
     write_log("📷 Edge 시작")
     print("📷 웹캠 시작!")
@@ -115,38 +124,34 @@ def main():
 
         # YOLO 추론 (프레임 단위 연산, 서버 요청 없음)
         results = model(frame)
-        has_person, has_book = detect_person_and_book(results)
+        has_person, has_book, has_laptop = detect_person_and_book(results)
 
         now = time.time()
 
-        # 🔽 book 감지 시각 기록
-        if has_book:
-            last_book_detected_time = now
+        # 🔽 book 또는 laptop 감지 시각 기록
+        if has_book or has_laptop:
+            last_study_object_detected_time = now
 
-        # 🔽 person 필수 + book 보조 조건
+        # 🔽 person 필수 + book OR laptop 보조 조건
         detected = (
             has_person and
-            last_book_detected_time is not None and
-            now - last_book_detected_time <= BOOK_MEMORY_SEC
+            last_study_object_detected_time is not None
         )
 
         # ------------------------------------
         # 1️⃣ 공부 시작 판별 로직
         # ------------------------------------
         if detected:
-            # 처음 감지된 시점 기록
-            if detected_start_time is None:
-                detected_start_time = now
-
-            # 일정 시간 이상 지속될 경우에만 START 요청
-            if (not studying and
-                now - detected_start_time >= MIN_STUDY_DETECTION_SEC):
-
+            if not studying:
                 print("📚 공부 상태 감지 → 서버에 Start 요청")
 
                 res = study_start(access_token)
                 studying = True
                 session_id = res["session"]["id"]
+
+                # ▶️ 공부 시작 즉시 이미지 1장 전송
+                upload_image(access_token, frame, session_id)
+                write_log("📤 공부 시작 즉시 이미지 전송")
 
                 write_log("📚 공부 시작")
 
@@ -162,22 +167,18 @@ def main():
         else:
             detected_start_time = None
 
-            if studying:
-                # 감지가 끊긴 최초 시점 기록
-                if lost_start_time is None:
-                    lost_start_time = now
+        if studying:
+            if (last_study_object_detected_time is not None and
+                now - last_study_object_detected_time >= STUDY_OBJECT_MEMORY_SEC):
 
-                # 일정 시간 이상 감지 실패 시에만 END 요청
-                # → 일시적인 인식 실패로 인한 종료 방지
-                if now - lost_start_time >= MIN_STUDY_DETECTION_SEC:
-                    print("🛑 공부 종료 감지 → 서버 End 요청")
+                print("🛑 공부 종료 감지 → 서버 End 요청")
 
-                    study_end(access_token)
-                    studying = False
-                    session_id = None
-                    lost_start_time = None
+                study_end(access_token)
+                studying = False
+                session_id = None
+                last_study_object_detected_time = None
 
-                    write_log("🛑 공부 종료")
+                write_log("🛑 공부 종료")
 
         # ------------------------------------
         # 3️⃣ 공부 중일 때만 이미지 업로드
