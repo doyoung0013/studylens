@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import login_page, dashboard_view
 
 from .views import (
     StudyStartView,
@@ -24,4 +25,7 @@ urlpatterns = [
     # Stats & Gallery
     path('stats/daily/', DailyStatsView.as_view(), name='stats_daily'),
     path('gallery/today/', TodayGalleryView.as_view(), name='today_gallery'),
+
+    path("", login_page),      
+    path("dashboard/", dashboard_view, name="dashboard"),
 ]

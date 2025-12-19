@@ -12,6 +12,82 @@ from .models import StudySession, StudyImage
 from .serializers import StudySessionSerializer, StudyImageSerializer
 from rest_framework.permissions import IsAuthenticated
 
+from django.contrib.auth.decorators import login_required
+from .models import StudySession
+
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+
+def login_page(request):
+    if request.method == "GET":
+        return render(request, "login.html")
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            return redirect("/dashboard/")
+        else:
+            return render(request, "login.html", {"error": "로그인 실패"})
+
+@login_required
+def dashboard_view(request):
+    user = request.user
+    today = timezone.localdate()
+
+    # -----------------------------
+    # 1. 오늘 공부 시간 (초 → 분)
+    # -----------------------------
+    today_sessions = StudySession.objects.filter(
+        user=user,
+        start_time__date=today,
+        end_time__isnull=False
+    )
+
+    today_seconds = sum(
+        [s.duration_seconds or 0 for s in today_sessions]
+    )
+    today_minutes = today_seconds // 60
+
+    # -----------------------------
+    # 2. 최근 7일 총 공부 시간 (초 → 시간)
+    # -----------------------------
+    start_date = today - timedelta(days=6)
+
+    week_sessions = StudySession.objects.filter(
+        user=user,
+        start_time__date__gte=start_date,
+        start_time__date__lte=today,
+        end_time__isnull=False
+    )
+
+    week_seconds = sum(
+        [s.duration_seconds or 0 for s in week_sessions]
+    )
+    week_hours = round(week_seconds / 3600, 1)
+
+    # -----------------------------
+    # 3. 오늘 촬영된 이미지
+    # -----------------------------
+    today_images = StudyImage.objects.filter(
+        user=user,
+        created_at__date=today
+    )
+
+    image_count = today_images.count()
+
+    context = {
+        "today_minutes": today_minutes,
+        "week_hours": week_hours,
+        "image_count": image_count,
+        "images": today_images,
+    }
+
+    return render(request, "dashboard.html", context)
 
 class StudyStartView(APIView):
     """

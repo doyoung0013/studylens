@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '임시'
 DEBUG = True
 
-ALLOWED_HOSTS = ['doyoung.pythonanywhere.com']  
+ALLOWED_HOSTS = ['doyoung.pythonanywhere.com', '*']  
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -40,7 +40,7 @@ ROOT_URLCONF = 'studylens.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
