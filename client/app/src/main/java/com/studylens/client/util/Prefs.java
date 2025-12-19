@@ -8,11 +8,15 @@ public class Prefs {
     private static final String PREF_NAME = "studylens";
     private static final String TOKEN = "token";
 
+    // access token 저장 (이름 유지)
     public static void saveToken(Context ctx, String token) {
         ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-                .edit().putString(TOKEN, token).apply();
+                .edit()
+                .putString(TOKEN, token)
+                .apply();
     }
 
+    // access token 조회 (이름 유지)
     public static String getToken(Context ctx) {
         return ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .getString(TOKEN, null);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 캘린더 요일 (일,월,화...) 스타일 -->
+    <style name="CalendarWeekText">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">#9CA3AF</item> <!-- 회색 -->
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- 캘린더 날짜 (숫자) 기본 스타일 -->
+    <style name="CalendarDayText">
+        <item name="android:layout_width">40dp</item> <!-- 너비 고정 -->
+        <item name="android:layout_height">40dp</item> <!-- 높이 고정 (정사각형) -->
+        <item name="android:layout_columnWeight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">#4B5563</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+
+    <!-- 공부한 날짜 (초록 원) 스타일 -->
+    <style name="CalendarDayText_Active" parent="CalendarDayText">
+        <item name="android:background">@drawable/bg_day_active</item>
+        <item name="android:textColor">#15803d</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

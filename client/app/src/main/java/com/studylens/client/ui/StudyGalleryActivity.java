@@ -13,7 +13,6 @@ import com.studylens.client.adapter.ImageAdapter;
 import com.studylens.client.api.ApiClient;
 import com.studylens.client.api.ApiService;
 import com.studylens.client.model.StudyImage;
-import com.studylens.client.util.Prefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +42,10 @@ public class StudyGalleryActivity extends AppCompatActivity {
 
         tvTitle.setText(selectedDay + "일 공부 모습");
 
-        api = ApiClient.getClient(null).create(ApiService.class);
+        // ✅ Context 전달
+        api = ApiClient
+                .getClient(getApplicationContext())
+                .create(ApiService.class);
 
         adapter = new ImageAdapter(this, imageList);
 
@@ -54,13 +56,18 @@ public class StudyGalleryActivity extends AppCompatActivity {
     }
 
     private void loadImages() {
-        String token = "Bearer " + Prefs.getToken(this);
 
-        api.getImages(token, selectedDay).enqueue(new Callback<List<StudyImage>>() {
+        api.getImages(selectedDay).enqueue(new Callback<List<StudyImage>>() {
             @Override
-            public void onResponse(Call<List<StudyImage>> call, Response<List<StudyImage>> response) {
+            public void onResponse(Call<List<StudyImage>> call,
+                                   Response<List<StudyImage>> response) {
+
                 if (!response.isSuccessful()) {
-                    Toast.makeText(StudyGalleryActivity.this, "이미지 로드 실패", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(
+                            StudyGalleryActivity.this,
+                            "이미지 로드 실패",
+                            Toast.LENGTH_SHORT
+                    ).show();
                     return;
                 }
 
@@ -71,7 +78,11 @@ public class StudyGalleryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<StudyImage>> call, Throwable t) {
-                Toast.makeText(StudyGalleryActivity.this, "서버 오류", Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                        StudyGalleryActivity.this,
+                        "서버 오류",
+                        Toast.LENGTH_SHORT
+                ).show();
             }
         });
     }

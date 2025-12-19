@@ -35,7 +35,7 @@ public class DailyDetailActivity extends AppCompatActivity {
         tvStudyTime = findViewById(R.id.tvStudyTime);
         btnGoGallery = findViewById(R.id.btnGoGallery);
 
-        api = ApiClient.getClient(null).create(ApiService.class);
+        api = ApiClient.getClient(getApplicationContext()).create(ApiService.class);
 
         tvDate.setText(selectedDay + "일 공부 기록");
 
@@ -51,9 +51,10 @@ public class DailyDetailActivity extends AppCompatActivity {
     private void loadDetail() {
         String token = "Bearer " + Prefs.getToken(this);
 
-        api.getDailyStats(token, 7).enqueue(new Callback<java.util.List<DailyStat>>() {
+        api.getDailyStats(7).enqueue(new Callback<java.util.List<DailyStat>>() {
             @Override
-            public void onResponse(Call<java.util.List<DailyStat>> call, Response<java.util.List<DailyStat>> response) {
+            public void onResponse(Call<java.util.List<DailyStat>> call,
+                                   Response<java.util.List<DailyStat>> response) {
                 if (!response.isSuccessful()) return;
 
                 for (DailyStat s : response.body()) {
@@ -68,5 +69,6 @@ public class DailyDetailActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<java.util.List<DailyStat>> call, Throwable t) { }
         });
+
     }
 }

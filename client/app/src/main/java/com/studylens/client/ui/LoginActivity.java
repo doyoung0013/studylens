@@ -36,7 +36,9 @@ public class LoginActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.password);
         loginBtn = findViewById(R.id.loginBtn);
 
-        api = ApiClient.getClient(null).create(ApiService.class);
+        api = ApiClient
+                .getClient(getApplicationContext())
+                .create(ApiService.class);
 
         loginBtn.setOnClickListener(v -> {
             if (!isLoggingIn) {
@@ -47,7 +49,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void doLogin() {
         isLoggingIn = true;
-        loginBtn.setEnabled(false); // 버튼 비활성화
+        loginBtn.setEnabled(false);
 
         LoginRequest req = new LoginRequest(
                 usernameInput.getText().toString(),
@@ -64,9 +66,15 @@ public class LoginActivity extends AppCompatActivity {
                 loginBtn.setEnabled(true);
 
                 if (res.isSuccessful() && res.body() != null) {
+
+                    // ✅ access token 저장
                     Prefs.saveToken(LoginActivity.this, res.body().access);
-                    startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+
+                    startActivity(
+                            new Intent(LoginActivity.this, HomeActivity.class)
+                    );
                     finish();
+
                 } else {
                     try {
                         if (res.errorBody() != null) {
@@ -74,7 +82,8 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     } catch (Exception ignored) {}
 
-                    Toast.makeText(LoginActivity.this,
+                    Toast.makeText(
+                            LoginActivity.this,
                             res.code() == 401
                                     ? "아이디 또는 비밀번호가 틀렸습니다"
                                     : "서버 응답 오류 (" + res.code() + ")",
