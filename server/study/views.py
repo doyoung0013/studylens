@@ -402,3 +402,41 @@ class GalleryView(APIView):
         images = StudyImage.objects.filter(user=request.user, captured_at__gte=start, captured_at__lt=end)
         serializer = StudyImageSerializer(images, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ==================================================================
+# API — 요약 & 리포트
+# ==================================================================
+class StudySummaryView(APIView):
+    """
+    GET /api/study/summary/?period=today|week|month   (기본 week)
+    GET /api/study/summary/?start=YYYY-MM-DD&end=YYYY-MM-DD
+    기간 합계, 하루 목표 달성 현황, 일별 통계
+    """
+
+    def get(self, request):
+        from .reports import build_summary, resolve_range
+
+        try:
+            period, start, end = resolve_range(request.query_params)
+            return Response(build_summary(request.user, period, start, end))
+        except InvalidParam as e:
+            return _bad_request(str(e))
+
+
+class StudyReportView(APIView):
+    """
+    GET /api/study/report/?period=today|week|month   (기본 week, 기간 최대 92일)
+    GET /api/study/report/?start=YYYY-MM-DD&end=YYYY-MM-DD
+    요약 + 집중 시간대 분석, 25분 이상 연속 집중 구간, 자리 이탈·휴대폰 빈도,
+    이전 기간 대비 증감, 연속 공부 일수, 한 줄 인사이트
+    """
+
+    def get(self, request):
+        from .reports import build_report, resolve_range
+
+        try:
+            period, start, end = resolve_range(request.query_params)
+            return Response(build_report(request.user, period, start, end))
+        except InvalidParam as e:
+            return _bad_request(str(e))

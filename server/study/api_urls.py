@@ -16,6 +16,8 @@ urlpatterns = [
     path("study/start/", views.StudyStartView.as_view(), name="study_start"),
     path("study/end/", views.StudyEndView.as_view(), name="study_end"),
     path("study/current/", views.CurrentStudyView.as_view(), name="study_current"),
+    path("study/summary/", views.StudySummaryView.as_view(), name="study_summary"),
+    path("study/report/", views.StudyReportView.as_view(), name="study_report"),
 
     # Distraction (집중도)
     path("study/distraction/start/", views.DistractionStartView.as_view(), name="distraction_start"),
