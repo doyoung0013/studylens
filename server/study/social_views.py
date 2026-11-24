@@ -16,7 +16,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-from .models import Friendship, GroupMembership, StudyGroup
+from .models import Friendship, GroupMembership, StudyGroup, UserProfile
 from .services import InvalidParam, build_ranking, generate_invite_code
 
 MAX_GROUPS_PER_USER = 20
@@ -98,17 +98,42 @@ class SignupView(APIView):
 
 
 class MeView(APIView):
-    """GET /api/me/  내 정보 + 친구/그룹 수 + 받은 친구 요청 수"""
+    """GET /api/me/  내 정보 + 하루 목표 + 친구/그룹 수 + 받은 친구 요청 수"""
 
     def get(self, request):
         user = request.user
         return Response({
             **_user_brief(user),
             "date_joined": user.date_joined,
+            "daily_goal_minutes": UserProfile.for_user(user).daily_goal_minutes,
             "friend_count": len(Friendship.friend_ids(user)),
             "pending_friend_requests": Friendship.objects.filter(to_user=user, status=Friendship.PENDING).count(),
             "group_count": user.group_memberships.count(),
         })
+
+
+class GoalView(APIView):
+    """
+    GET   /api/me/goal/                          하루 목표 순공부 시간(분)
+    PATCH /api/me/goal/  {daily_goal_minutes}    목표 변경 (10분 ~ 16시간)
+    """
+
+    def get(self, request):
+        return Response({"daily_goal_minutes": UserProfile.for_user(request.user).daily_goal_minutes})
+
+    def patch(self, request):
+        try:
+            minutes = int(request.data.get("daily_goal_minutes"))
+        except (TypeError, ValueError):
+            return _bad_request("daily_goal_minutes는 정수(분)여야 합니다.")
+        if not UserProfile.MIN_GOAL_MINUTES <= minutes <= UserProfile.MAX_GOAL_MINUTES:
+            return _bad_request(
+                f"목표는 {UserProfile.MIN_GOAL_MINUTES}분 ~ {UserProfile.MAX_GOAL_MINUTES // 60}시간 사이로 설정해 주세요."
+            )
+        profile = UserProfile.for_user(request.user)
+        profile.daily_goal_minutes = minutes
+        profile.save(update_fields=["daily_goal_minutes"])
+        return Response({"daily_goal_minutes": minutes})
 
 
 # ==================================================================

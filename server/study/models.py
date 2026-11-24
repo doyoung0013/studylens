@@ -155,3 +155,24 @@ class GroupMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} in {self.group}"
+
+
+# ==================================================================
+# 사용자 설정
+# ==================================================================
+class UserProfile(models.Model):
+    """사용자별 설정. 지금은 하루 목표 순공부 시간만 가진다."""
+    DEFAULT_GOAL_MINUTES = 60
+    MIN_GOAL_MINUTES = 10
+    MAX_GOAL_MINUTES = 16 * 60
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    daily_goal_minutes = models.PositiveIntegerField(default=DEFAULT_GOAL_MINUTES)
+
+    def __str__(self):
+        return f"{self.user.username} (목표 {self.daily_goal_minutes}분)"
+
+    @classmethod
+    def for_user(cls, user):
+        profile, _ = cls.objects.get_or_create(user=user)
+        return profile

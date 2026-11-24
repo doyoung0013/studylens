@@ -70,6 +70,26 @@ class DailyStatsServiceTest(BaseAPITest):
         self.assertTrue(all(d["total_seconds"] == 0 and d["focus_rate"] is None for d in stats))
 
 
+class GoalTest(BaseAPITest):
+    def test_goal_default_update_and_stats(self):
+        res = self.client_api.get("/api/me/goal/")
+        self.assertEqual(res.data["daily_goal_minutes"], 60)
+
+        for bad in [5, 2000, "abc", None]:
+            self.assertEqual(self.client_api.patch("/api/me/goal/", {"daily_goal_minutes": bad}, format="json").status_code, 400)
+        res = self.client_api.patch("/api/me/goal/", {"daily_goal_minutes": 120}, format="json")
+        self.assertEqual(res.data["daily_goal_minutes"], 120)
+        self.assertEqual(self.client_api.get("/api/me/").data["daily_goal_minutes"], 120)
+
+        s = StudySession.objects.create(user=self.user, start_time=kst(2026, 3, 1, 9), end_time=kst(2026, 3, 1, 11, 30))
+        DistractionInterval.objects.create(session=s, start_time=kst(2026, 3, 1, 9), end_time=kst(2026, 3, 1, 9, 30))
+        day = daily_study_stats(self.user, date(2026, 3, 1), date(2026, 3, 1), now=kst(2026, 3, 2))[0]
+        self.assertEqual(day["goal_seconds"], 7200)
+        self.assertEqual(day["focus_seconds"], 7200)
+        self.assertTrue(day["goal_achieved"])
+        self.assertEqual(day["goal_rate"], 100.0)
+
+
 # ------------------------------------------------------------------
 # 세션 API
 # ------------------------------------------------------------------

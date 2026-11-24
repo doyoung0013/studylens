@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import DistractionInterval, Friendship, GroupMembership, StudyGroup, StudyImage, StudySession
+from .models import (
+    DistractionInterval,
+    Friendship,
+    GroupMembership,
+    StudyGroup,
+    StudyImage,
+    StudySession,
+    UserProfile,
+)
 
 
 class DistractionInline(admin.TabularInline):
@@ -37,3 +45,8 @@ class StudyGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "owner", "invite_code", "created_at")
     search_fields = ("name", "invite_code")
     inlines = [MembershipInline]
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "daily_goal_minutes")

@@ -10,6 +10,7 @@ urlpatterns = [
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/signup/", social.SignupView.as_view(), name="signup"),
     path("me/", social.MeView.as_view(), name="me"),
+    path("me/goal/", social.GoalView.as_view(), name="me_goal"),
 
     # Study session
     path("study/start/", views.StudyStartView.as_view(), name="study_start"),

@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from .models import DistractionInterval, StudySession
+from .models import DistractionInterval, StudySession, UserProfile
 
 MAX_RANGE_DAYS = 366
 
@@ -155,7 +155,9 @@ def daily_study_stats(user, start_date, end_date, now=None):
     - 자정을 넘긴 세션/딴짓 구간은 날짜별로 나눠서 합산
     - 진행 중인 세션/딴짓은 현재 시각까지 포함
     반환 (날짜 오름차순, 기록 없는 날도 0으로 포함):
-      [{"date", "total_seconds", "distracted_seconds", "focus_seconds", "focus_rate"}, ...]
+      [{"date", "total_seconds", "distracted_seconds", "focus_seconds", "focus_rate",
+        "goal_seconds", "goal_rate", "goal_achieved"}, ...]
+    goal_* 는 사용자의 현재 하루 목표(UserProfile.daily_goal_minutes) 기준이다.
     """
     if end_date < start_date:
         raise InvalidParam("end는 start보다 같거나 이후여야 합니다.")
@@ -181,16 +183,22 @@ def daily_study_stats(user, start_date, end_date, now=None):
         distracted, range_start, range_end, now,
     )
 
+    goal_seconds = UserProfile.for_user(user).daily_goal_minutes * 60
+
     result = []
     for day in all_days:
         total = int(study[day])
         dist = min(int(distracted[day]), total)
+        focus = total - dist
         result.append({
             "date": day.isoformat(),
             "total_seconds": total,
             "distracted_seconds": dist,
-            "focus_seconds": total - dist,
+            "focus_seconds": focus,
             "focus_rate": focus_rate(total, dist),
+            "goal_seconds": goal_seconds,
+            "goal_rate": round(100 * focus / goal_seconds, 1),
+            "goal_achieved": focus >= goal_seconds,
         })
     return result
 
