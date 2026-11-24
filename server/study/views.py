@@ -103,7 +103,10 @@ def dashboard_view(request):
     user = request.user
     today = timezone.localdate()
 
-    week = daily_study_stats(user, today - timedelta(days=6), today)
+    from .reports import build_report
+
+    report = build_report(user, "week", today - timedelta(days=6), today)
+    week = report["daily"]
     today_stat = week[-1]
     week_total = sum(d["total_seconds"] for d in week)
     week_focus = sum(d["focus_seconds"] for d in week)
@@ -114,7 +117,8 @@ def dashboard_view(request):
     session = _open_session(user)
     current = session_summary(session) if session else None
 
-    max_week = max([d["total_seconds"] for d in week] + [1])
+    goal_seconds = report["goal"]["daily_goal_minutes"] * 60
+    max_week = max([d["total_seconds"] for d in week] + [goal_seconds, 1])
     chart = [
         {
             "label": d["date"][5:].replace("-", "/"),
@@ -123,8 +127,16 @@ def dashboard_view(request):
             "height": round(100 * d["total_seconds"] / max_week),
             # 막대 안에서 순공부가 차지하는 비율(%)
             "focus_pct": round(100 * d["focus_seconds"] / d["total_seconds"]) if d["total_seconds"] else 0,
+            "achieved": d["goal_achieved"],
         }
         for d in week
+    ]
+    max_hour = max([h["focus_seconds"] for h in report["hourly"]] + [1])
+    best = {h["hour"] for h in report["best_hours"]}
+    hourly = [
+        {"hour": h["hour"], "height": round(100 * h["focus_seconds"] / max_hour),
+         "minutes": h["focus_seconds"] // 60, "best": h["hour"] in best}
+        for h in report["hourly"]
     ]
 
     context = {
@@ -139,6 +151,11 @@ def dashboard_view(request):
         "current": current,
         "current_minutes": current["elapsed_seconds"] // 60 if current else 0,
         "chart": chart,
+        "goal_minutes": report["goal"]["daily_goal_minutes"],
+        "goal_line": round(100 * goal_seconds / max_week),
+        "today_goal_rate": min(round(today_stat["goal_rate"]), 100),
+        "report": report,
+        "hourly": hourly,
         "ranking": _friend_ranking_preview(user),
     }
     return render(request, "dashboard.html", context)

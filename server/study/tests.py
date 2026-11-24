@@ -326,6 +326,15 @@ class WebTest(BaseAPITest):
         self.client.post("/logout/")
         self.assertEqual(self.client.get("/dashboard/").status_code, 302)
 
+    def test_dashboard_report_section(self):
+        self.client.force_login(self.user)
+        start = timezone.now() - timedelta(minutes=50)
+        StudySession.objects.create(user=self.user, start_time=start, end_time=start + timedelta(minutes=30))
+        res = self.client.get("/dashboard/")
+        self.assertContains(res, "이번 주 리포트")
+        self.assertContains(res, "목표 60분")
+        self.assertContains(res, "goal-mark")
+
     def test_login_failure(self):
         res = self.client.post("/", {"username": "tester", "password": "wrong"})
         self.assertContains(res, "올바르지 않습니다")

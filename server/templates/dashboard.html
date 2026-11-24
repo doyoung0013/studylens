@@ -44,7 +44,21 @@
         .chart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; align-items: end; height: 180px; }
         .bar { position: relative; height: 140px; display: flex; align-items: flex-end; justify-content: center; }
         .bar .total { width: 60%; background: #e0e7ff; border-radius: 6px 6px 0 0; position: relative; min-height: 2px; }
-        .bar .focus { position: absolute; bottom: 0; left: 0; right: 0; background: #4f46e5; border-radius: 6px 6px 0 0; }
+        .bar .focus { position: absolute; bottom: 0; left: 0; right: 0; background: #a5b4fc; border-radius: 6px 6px 0 0; }
+        .bar .total.achieved .focus { background: #16a34a; }
+        .goal-mark { position: absolute; left: -5px; right: -5px; border-top: 2px dashed #f59e0b; pointer-events: none; }
+        .progress { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 10px; }
+        .progress i { display: block; height: 100%; background: #16a34a; border-radius: 999px; }
+
+        .hours { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; align-items: end; height: 90px; }
+        .hours div { background: #e0e7ff; border-radius: 3px 3px 0 0; min-height: 2px; }
+        .hours div.best { background: #4f46e5; }
+        .hour-labels { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 11px; color: #9ca3af; margin-top: 4px; }
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 18px 0; }
+        .report-grid div { background: #f9fafb; border-radius: 10px; padding: 14px; }
+        .report-grid b { display: block; font-size: 20px; margin-top: 4px; }
+        .report-grid small { color: #6b7280; font-size: 12px; }
+        .insights { margin: 0; padding-left: 18px; color: #374151; font-size: 14px; line-height: 1.8; }
         .col { text-align: center; font-size: 12px; color: #6b7280; }
         .col b { display: block; color: #111827; font-size: 12px; margin-top: 4px; }
         .legend { display: flex; gap: 16px; font-size: 12px; color: #6b7280; margin-top: 12px; }
@@ -106,7 +120,8 @@
     <div class="cards">
         <div class="card">
             <h3>오늘 순공부 시간</h3>
-            <p>{{ today_focus_minutes }}분</p>
+            <p>{{ today_focus_minutes }}분 <span>/ 목표 {{ goal_minutes }}분</span></p>
+            <div class="progress"><i style="width: {{ today_goal_rate }}%"></i></div>
             <span>전체 {{ today_minutes }}분 · 딴짓 {{ today_distracted_minutes }}분</span>
         </div>
         <div class="card">
@@ -126,12 +141,13 @@
     </div>
 
     <div class="section">
-        <h2>최근 7일</h2>
+        <h2>최근 7일 · 목표 달성 {{ report.goal.achieved_days }}/{{ report.goal.days }}일</h2>
         <div class="chart">
             {% for d in chart %}
                 <div class="col">
                     <div class="bar">
-                        <div class="total" style="height: {{ d.height }}%;">
+                        <div class="goal-mark" style="bottom: {{ goal_line }}%;"></div>
+                        <div class="total{% if d.achieved %} achieved{% endif %}" style="height: {{ d.height }}%;">
                             <div class="focus" style="height: {{ d.focus_pct }}%;"></div>
                         </div>
                     </div>
@@ -141,9 +157,32 @@
             {% endfor %}
         </div>
         <div class="legend">
-            <span><i style="background:#4f46e5"></i>순공부</span>
+            <span><i style="background:#16a34a"></i>순공부 (목표 달성)</span>
+            <span><i style="background:#a5b4fc"></i>순공부 (미달성)</span>
             <span><i style="background:#e0e7ff"></i>딴짓 포함 전체</span>
+            <span><i style="background:#f59e0b"></i>하루 목표 {{ goal_minutes }}분</span>
         </div>
+    </div>
+
+    <div class="section">
+        <h2>이번 주 리포트 <small style="color:#6b7280;font-weight:400;font-size:13px">{{ report.start }} ~ {{ report.end }}</small></h2>
+
+        <div class="report-grid">
+            <div><small>가장 집중이 잘 되는 시간</small><b>{% if report.best_hours %}{{ report.best_hours.0.label }}{% else %}-{% endif %}</b></div>
+            <div><small>25분+ 연속 집중</small><b>{{ report.deep_focus.count }}회</b></div>
+            <div><small>자리 이탈</small><b>{{ report.away.count }}회</b></div>
+            <div><small>휴대폰 사용</small><b>{{ report.phone.count }}회</b></div>
+            <div><small>연속 공부</small><b>{{ report.streak.current_days }}일</b></div>
+        </div>
+
+        <div class="hours">
+            {% for h in hourly %}<div class="{% if h.best %}best{% endif %}" style="height: {{ h.height }}%" title="{{ h.hour }}시 · {{ h.minutes }}분"></div>{% endfor %}
+        </div>
+        <div class="hour-labels"><span>0시</span><span>6시</span><span>12시</span><span>18시</span></div>
+
+        <ul class="insights" style="margin-top:18px">
+            {% for line in report.insights %}<li>{{ line }}</li>{% endfor %}
+        </ul>
     </div>
 
     <div class="section">
