@@ -1,210 +1,173 @@
-import torch
-import cv2
+"""
+StudyLens Edge — 웹캠으로 공부 상태를 감지해서 서버에 기록한다.
+
+실행:  python edge.py        (종료: 미리보기 창에서 q 또는 Ctrl+C)
+
+구성
+- detector.py     : YOLOv5 추론, 저조도/흔들림 검사, 업로드용 인코딩
+- study_state.py  : 공부 시작/종료/딴짓/캡처 판정 상태머신 (순수 로직)
+- api_client.py   : JWT 인증, 디스크 큐 + 백그라운드 전송, 재시도
+"""
+import logging
+import sys
 import time
-import numpy as np
-from edge_utils import get_access_token, study_start, study_end, upload_image
-from config import DETECTION_THRESHOLD, MIN_STUDY_DETECTION_SEC, CAPTURE_INTERVAL_SEC
 import warnings
+from logging.handlers import RotatingFileHandler
+
+import cv2
+
+import config
+from api_client import AuthError, StudyLensClient
+from detector import Detector, encode_for_upload, is_camera_shaking, is_low_brightness, to_gray
+from study_state import StateConfig, StudyStateMachine
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-LOG_FILE = "edge.log"
+log = logging.getLogger("studylens")
 
-def write_log(message):
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    log = f"[{timestamp}] {message}"
-    print(log)
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(f"[{timestamp}] {message}\n")
-
-
-LOW_BRIGHTNESS_THRESHOLD = 40
-MOTION_THRESHOLD = 25
-BOOK_CONF_THRESHOLD = 0.25
-BOOK_MEMORY_SEC = 10  # 최근 10초 안에 book이 한 번이라도 감지되면 OK
-LAPTOP_CONF_THRESHOLD = 0.25
-STUDY_OBJECT_MEMORY_SEC = 180  # book 또는 laptop 최근 감지 허용 시간 (3분)
+EVENT_MESSAGES = {
+    "start": "📚 공부 시작",
+    "end": "🛑 공부 종료",
+    "distraction_start": "📱 딴짓(휴대폰) 감지 시작",
+    "distraction_end": "✅ 딴짓 종료",
+    "capture": "📤 이미지 업로드 예약",
+}
 
 
-def is_low_brightness(frame):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    return np.mean(gray) < LOW_BRIGHTNESS_THRESHOLD
+def setup_logging():
+    fmt = logging.Formatter("[%(asctime)s] %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S")
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    file_handler = RotatingFileHandler(config.LOG_FILE, maxBytes=2 * 1024 * 1024, backupCount=3, encoding="utf-8")
+    file_handler.setFormatter(fmt)
+    console = logging.StreamHandler(sys.stdout)
+    console.setFormatter(fmt)
+    root.addHandler(file_handler)
+    root.addHandler(console)
 
 
-def is_camera_shaking(prev_frame, curr_frame):
-    if prev_frame is None:
-        return False
-    prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-    curr_gray = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
-    diff = cv2.absdiff(prev_gray, curr_gray)
-    return np.mean(diff) > MOTION_THRESHOLD
+class ThrottledLogger:
+    """같은 경고를 LOG_THROTTLE_SEC 마다 한 번만 기록 (매 프레임 로그 폭주 방지)."""
+
+    def __init__(self, interval):
+        self.interval = interval
+        self._last = {}
+        self._suppressed = {}
+
+    def warning(self, key, message):
+        now = time.time()
+        if now - self._last.get(key, 0) >= self.interval:
+            extra = self._suppressed.pop(key, 0)
+            log.warning("%s%s", message, f" (이전 {extra}회 생략)" if extra else "")
+            self._last[key] = now
+        else:
+            self._suppressed[key] = self._suppressed.get(key, 0) + 1
 
 
-# ------------------------------------
-# YOLOv5 모델 로드 (로컬 Edge에서만 수행)
-# ------------------------------------
-print("📦 YOLOv5 모델 로딩 중...")
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
-model.conf = DETECTION_THRESHOLD
+def draw_status(image, state):
+    if state.distracted:
+        text, color = "DISTRACTED (phone)", (0, 165, 255)
+    elif state.studying:
+        text, color = "STUDYING", (0, 200, 0)
+    else:
+        text, color = "IDLE", (180, 180, 180)
+    cv2.putText(image, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+    return image
 
-
-def detect_person_and_book(results):
-    """
-    YOLO 추론 결과에서
-    - person
-    - book
-    이 동시에 존재하는지만 판별
-
-    ⚠️ 개별 객체 추적 ❌
-    ✅ 클래스 단위 존재 여부만 판단 (요청 최소화 목적)
-    """
-    has_person = False
-    has_book = False
-    has_laptop = False  
-    for *box, conf, cls in results.xyxy[0]:
-        label = int(cls)
-
-        if label == 0:   # person
-            has_person = True
-
-        # 🔽 book 신뢰도 임계값 완화 적용
-        if label == 73 and conf > BOOK_CONF_THRESHOLD:  # book
-            has_book = True
-
-        if label == 63 and conf > LAPTOP_CONF_THRESHOLD:  # laptop
-            has_laptop = True
-
-    return has_person, has_book, has_laptop 
 
 def main():
-    # ------------------------------------
-    # 서버 인증 (JWT)
-    # ------------------------------------
-    access_token = get_access_token()
-    if not access_token:
-        write_log("❌ 서버 인증 실패")
-        return
+    setup_logging()
 
-    cap = cv2.VideoCapture(0)
+    if not config.LOGIN_USERNAME or not config.LOGIN_PASSWORD:
+        log.error("STUDYLENS_USERNAME / STUDYLENS_PASSWORD 가 설정되지 않았습니다. (edge/.env.example 참고)")
+        return 1
 
-    # ------------------------------------
-    # 상태 관리 변수
-    # ------------------------------------
-    studying = False
-    session_id = None
-    detected_start_time = None
-    lost_start_time = None
-    last_capture_time = 0
-    prev_frame = None
-    last_book_detected_time = None
-    last_study_object_detected_time = None
-
-    write_log("📷 Edge 시작")
-    print("📷 웹캠 시작!")
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            continue
-
-        # ====================================================
-        # 저조도 / 흔들림 환경 감지 → 자동 무시
-        # ====================================================
-        if is_low_brightness(frame):
-            write_log("⚠️ 저조도 환경 → 프레임 무시")
-            prev_frame = frame
-            continue
-
-        if is_camera_shaking(prev_frame, frame):
-            write_log("⚠️ 카메라 흔들림 → 프레임 무시")
-            prev_frame = frame
-            continue
-
-        prev_frame = frame
-
-        # YOLO 추론 (프레임 단위 연산, 서버 요청 없음)
-        results = model(frame)
-        has_person, has_book, has_laptop = detect_person_and_book(results)
-
-        now = time.time()
-
-        # 🔽 book 또는 laptop 감지 시각 기록
-        if has_book or has_laptop:
-            last_study_object_detected_time = now
-
-        # 🔽 person 필수 + book OR laptop 보조 조건
-        detected = (
-            has_person and
-            last_study_object_detected_time is not None
-        )
-
-        # ------------------------------------
-        # 1️⃣ 공부 시작 판별 로직
-        # ------------------------------------
-        if detected:
-            if not studying:
-                print("📚 공부 상태 감지 → 서버에 Start 요청")
-
-                res = study_start(access_token)
-                studying = True
-                session_id = res["session"]["id"]
-
-                # ▶️ 공부 시작 즉시 이미지 1장 전송
-                upload_image(access_token, frame, session_id)
-                write_log("📤 공부 시작 즉시 이미지 전송")
-
-                write_log("📚 공부 시작")
-
-                # 종료 후보 시간 초기화
-                lost_start_time = None
-
-                # 시작 직후 즉시 캡처 방지
-                last_capture_time = now
-
-        # ------------------------------------
-        # 2️⃣ 공부 종료 판별 로직 (안정성 강화)
-        # ------------------------------------
+    client = StudyLensClient(
+        config.SERVER_BASE_URL, config.LOGIN_USERNAME, config.LOGIN_PASSWORD, config.QUEUE_DIR,
+        timeout=config.REQUEST_TIMEOUT_SEC, retry_base=config.RETRY_BASE_SEC, retry_max=config.RETRY_MAX_SEC,
+    )
+    try:
+        if client.login():
+            log.info("✅ 서버 인증 성공")
         else:
-            detected_start_time = None
+            log.warning("⚠️ 서버에 연결할 수 없어 오프라인 모드로 시작합니다 (연결되면 자동 전송)")
+    except AuthError as e:
+        log.error("❌ 서버 인증 실패: %s", e)
+        return 1
 
-        if studying:
-            if (last_study_object_detected_time is not None and
-                now - last_study_object_detected_time >= STUDY_OBJECT_MEMORY_SEC):
+    pending = client.pending_count()
+    if pending:
+        log.info("이전 실행에서 못 보낸 이벤트 %d건을 전송합니다", pending)
+    client.start_worker()
 
-                print("🛑 공부 종료 감지 → 서버 End 요청")
+    log.info("📦 YOLOv5 모델 로딩 중...")
+    detector = Detector()
 
-                study_end(access_token)
-                studying = False
-                session_id = None
-                last_study_object_detected_time = None
+    cap = cv2.VideoCapture(config.CAMERA_INDEX)
+    if not cap.isOpened():
+        log.error("❌ 카메라(%s)를 열 수 없습니다", config.CAMERA_INDEX)
+        client.stop_worker()
+        return 1
 
-                write_log("🛑 공부 종료")
+    state = StudyStateMachine(StateConfig.from_module(config))
+    throttle = ThrottledLogger(config.LOG_THROTTLE_SEC)
+    infer_interval = 1.0 / config.INFERENCE_FPS
+    last_infer = 0.0
+    prev_gray = None
+    preview = None
 
-        # ------------------------------------
-        # 3️⃣ 공부 중일 때만 이미지 업로드
-        # ------------------------------------
-        if studying and (now - last_capture_time >= CAPTURE_INTERVAL_SEC):
-            print("📤 이미지 업로드 중...")
+    log.info("📷 Edge 시작 (추론 %.1f fps)", config.INFERENCE_FPS)
 
-            # 이미지 업로드 주기 제한 → 서버 부하 및 네트워크 사용량 제어
-            upload_image(access_token, frame, session_id)
-            last_capture_time = now
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                throttle.warning("no_frame", "카메라 프레임을 읽지 못했습니다")
+                time.sleep(0.1)
+                continue
 
-            write_log("📤 이미지 업로드")
+            gray = to_gray(frame)
+            now = time.time()
 
-        cv2.imshow("StudyLens Edge", results.render()[0])
+            if now - last_infer >= infer_interval:
+                last_infer = now
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                # 저조도 / 흔들림 프레임은 판정에서 제외
+                if is_low_brightness(gray):
+                    throttle.warning("dark", "⚠️ 저조도 환경 → 프레임 무시")
+                elif is_camera_shaking(prev_gray, gray):
+                    throttle.warning("shake", "⚠️ 카메라 흔들림 → 프레임 무시")
+                else:
+                    detection, results = detector.detect(frame)
+                    events = state.observe(now, detection.person, detection.study_object, detection.phone)
+                    for event in events:
+                        image = encode_for_upload(frame) if event.kind == "capture" else None
+                        client.enqueue(event.kind, event.time, image)
+                        log.info(EVENT_MESSAGES[event.kind])
+                    if config.SHOW_PREVIEW:
+                        preview = draw_status(results.render()[0][..., ::-1].copy(), state)
 
-    if studying:
-        study_end(access_token)
-        write_log("🛑 강제 종료로 인한 공부 종료")
+            prev_gray = gray
 
-    cap.release()
-    cv2.destroyAllWindows()
-    write_log("🧹 Edge 종료")
+            if config.SHOW_PREVIEW:
+                cv2.imshow("StudyLens Edge", preview if preview is not None else frame)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+    except KeyboardInterrupt:
+        log.info("Ctrl+C 입력")
+    finally:
+        for event in state.shutdown(time.time()):
+            client.enqueue(event.kind, event.time)
+            log.info("%s (프로그램 종료)", EVENT_MESSAGES[event.kind])
+        cap.release()
+        if config.SHOW_PREVIEW:
+            cv2.destroyAllWindows()
+        left = client.stop_worker(flush_timeout=10)
+        if left:
+            log.warning("전송하지 못한 이벤트 %d건은 다음 실행 때 전송됩니다", left)
+        log.info("🧹 Edge 종료")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
