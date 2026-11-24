@@ -104,6 +104,44 @@ def _accumulate_by_day(intervals, totals, range_start, range_end, now):
             seg_start = piece_end
 
 
+def merged_distraction_rows(queryset, range_start, range_end, now):
+    """
+    범위와 겹치는 딴짓 구간을 세션별로 합집합 처리한다.
+    (휴대폰 사용과 자리 이탈이 동시에 일어나도 시간을 두 번 빼지 않도록)
+    반환: [(session_id, user_id, start, end), ...]  — 진행 중(end=None)은 now 로 채움
+    """
+    rows = (
+        queryset
+        .filter(start_time__lt=range_end)
+        .exclude(end_time__isnull=False, end_time__lte=range_start)
+        .order_by("session_id", "start_time")
+        .values_list("session_id", "session__user_id", "start_time", "end_time")
+    )
+    merged, cur = [], None
+    for sid, uid, s_time, e_time in rows:
+        e_time = e_time or now
+        if cur and cur[0] == sid and s_time <= cur[3]:
+            cur[3] = max(cur[3], e_time)
+        else:
+            if cur:
+                merged.append(tuple(cur))
+            cur = [sid, uid, s_time, e_time]
+    if cur:
+        merged.append(tuple(cur))
+    return merged
+
+
+def merge_intervals(intervals):
+    """[(start, end), ...] → 겹치는 구간을 합친 정렬된 목록."""
+    result = []
+    for s_time, e_time in sorted(intervals):
+        if result and s_time <= result[-1][1]:
+            result[-1] = (result[-1][0], max(result[-1][1], e_time))
+        else:
+            result.append((s_time, e_time))
+    return result
+
+
 def focus_rate(total_seconds, distracted_seconds):
     """집중도(%) = 순공부 / 전체. 공부 기록이 없으면 None."""
     if total_seconds <= 0:
@@ -138,7 +176,8 @@ def daily_study_stats(user, start_date, end_date, now=None):
         study, range_start, range_end, now,
     )
     _accumulate_by_day(
-        _overlapping(DistractionInterval.objects.filter(session__user=user), range_start, range_end),
+        [(s, e) for _, _, s, e in merged_distraction_rows(
+            DistractionInterval.objects.filter(session__user=user), range_start, range_end, now)],
         distracted, range_start, range_end, now,
     )
 
@@ -162,15 +201,17 @@ def session_summary(session, now=None):
     end = session.end_time or now
     elapsed = max(0, int((end - session.start_time).total_seconds()))
 
-    distracted = 0.0
-    open_distraction = None
+    pieces = []
+    open_reasons = {}
     for d in session.distractions.all():
         d_end = min(d.end_time or now, end)
         d_start = max(d.start_time, session.start_time)
         if d_end > d_start:
-            distracted += (d_end - d_start).total_seconds()
+            pieces.append((d_start, d_end))
         if d.end_time is None:
-            open_distraction = d
+            open_reasons[d.reason] = d.start_time
+    distracted = sum((e - s).total_seconds() for s, e in merge_intervals(pieces))
+    open_distraction = min(open_reasons.values()) if open_reasons else None
 
     distracted = min(int(distracted), elapsed)
     return {
@@ -182,7 +223,9 @@ def session_summary(session, now=None):
         "focus_seconds": elapsed - distracted,
         "focus_rate": focus_rate(elapsed, distracted),
         "is_distracted": open_distraction is not None,
-        "distracted_since": open_distraction.start_time if open_distraction else None,
+        "distracted_since": open_distraction,
+        "is_away": "away" in open_reasons,
+        "is_on_phone": "phone" in open_reasons,
     }
 
 
@@ -298,12 +341,10 @@ def totals_by_user(user_ids, start_date, end_date, now=None):
         .exclude(end_time__isnull=False, end_time__lte=range_start)
         .values_list("user_id", "start_time", "end_time")
     )
-    distractions = (
-        DistractionInterval.objects
-        .filter(session__user_id__in=user_ids, start_time__lt=range_end)
-        .exclude(end_time__isnull=False, end_time__lte=range_start)
-        .values_list("session__user_id", "start_time", "end_time")
-    )
+    distractions = [
+        (uid, s, e) for _, uid, s, e in merged_distraction_rows(
+            DistractionInterval.objects.filter(session__user_id__in=user_ids), range_start, range_end, now)
+    ]
     study = accumulate(sessions)
     distracted = accumulate(distractions)
 

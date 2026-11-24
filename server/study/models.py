@@ -40,11 +40,14 @@ class StudySession(models.Model):
 
 class DistractionInterval(models.Model):
     """
-    공부 세션 중 '딴짓'(휴대폰 사용 등)으로 판단된 구간.
-    순공부 시간 = 세션 시간 - 딴짓 구간 시간
+    공부 세션 중 집중하지 못한 구간.
+    - phone: 휴대폰 사용
+    - away : 자리 이탈 (사람이 잠깐 안 보이거나, 상반신 위치가 크게 벗어남)
+    순공부 시간 = 세션 시간 - (딴짓 구간들의 합집합)
     """
     REASON_PHONE = "phone"
-    REASON_CHOICES = [(REASON_PHONE, "휴대폰 사용")]
+    REASON_AWAY = "away"
+    REASON_CHOICES = [(REASON_PHONE, "휴대폰 사용"), (REASON_AWAY, "자리 이탈")]
 
     session = models.ForeignKey(StudySession, on_delete=models.CASCADE, related_name="distractions")
     reason = models.CharField(max_length=20, choices=REASON_CHOICES, default=REASON_PHONE)

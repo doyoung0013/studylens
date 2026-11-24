@@ -160,6 +160,34 @@ class DistractionAndCurrentAPITest(BaseAPITest):
         self.assertEqual(session["focus_seconds"], session["elapsed_seconds"] - 360)
         self.assertEqual(res.data["today"]["distracted_seconds"] <= res.data["today"]["total_seconds"], True)
 
+    def test_phone_and_away_overlap_counted_once(self):
+        start = timezone.now() - timedelta(minutes=60)
+        self.client_api.post("/api/study/start/", {"start_time": start.isoformat()}, format="json")
+        post = lambda url, **body: self.client_api.post(url, {k: v.isoformat() if hasattr(v, "isoformat") else v
+                                                              for k, v in body.items()}, format="json")
+        # 휴대폰 10~20분, 자리 이탈 15~25분 → 합집합 15분
+        self.assertEqual(post("/api/study/distraction/start/", start_time=start + timedelta(minutes=10)).status_code, 201)
+        self.assertEqual(post("/api/study/distraction/start/", start_time=start + timedelta(minutes=15),
+                              reason="away").status_code, 201)
+        res = self.client_api.get("/api/study/current/")
+        self.assertTrue(res.data["session"]["is_away"])
+        self.assertTrue(res.data["session"]["is_on_phone"])
+
+        post("/api/study/distraction/end/", end_time=start + timedelta(minutes=20), reason="phone")
+        post("/api/study/distraction/end/", end_time=start + timedelta(minutes=25), reason="away")
+        session = self.client_api.get("/api/study/current/").data["session"]
+        self.assertEqual(session["distracted_seconds"], 15 * 60)
+        self.assertFalse(session["is_distracted"])
+
+        today = self.client_api.get("/api/stats/daily/?days=1").data[-1]
+        self.assertGreaterEqual(today["distracted_seconds"], 0)
+        self.assertLessEqual(today["distracted_seconds"], 15 * 60)
+
+    def test_unknown_reason_rejected(self):
+        self.client_api.post("/api/study/start/")
+        self.assertEqual(self.client_api.post("/api/study/distraction/start/", {"reason": "sleep"},
+                                              format="json").status_code, 400)
+
     def test_distraction_requires_session(self):
         res = self.client_api.post("/api/study/distraction/start/")
         self.assertEqual(res.status_code, 400)

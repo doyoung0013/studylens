@@ -235,8 +235,9 @@ class CurrentStudyView(APIView):
 # ==================================================================
 class DistractionStartView(APIView):
     """
-    POST /api/study/distraction/start/   body(선택): {"start_time": ISO-8601, "reason": "phone"}
-    진행 중인 세션에 딴짓 구간을 연다. 이미 열려 있으면 그대로 반환.
+    POST /api/study/distraction/start/   body(선택): {"start_time": ISO-8601, "reason": "phone" | "away"}
+    진행 중인 세션에 딴짓 구간을 연다. 같은 reason 의 구간이 이미 열려 있으면 그대로 반환.
+    (휴대폰과 자리 이탈은 동시에 열릴 수 있고, 집계 시 겹치는 시간은 한 번만 뺀다)
     """
 
     def post(self, request):
@@ -255,7 +256,7 @@ class DistractionStartView(APIView):
         except InvalidParam as e:
             return _bad_request(str(e))
 
-        existing = session.distractions.filter(end_time__isnull=True).first()
+        existing = session.distractions.filter(end_time__isnull=True, reason=reason).first()
         if existing:
             return Response(DistractionSerializer(existing).data, status=status.HTTP_200_OK)
 
@@ -264,15 +265,17 @@ class DistractionStartView(APIView):
 
 
 class DistractionEndView(APIView):
-    """POST /api/study/distraction/end/   body(선택): {"end_time": ISO-8601}"""
+    """
+    POST /api/study/distraction/end/   body(선택): {"end_time": ISO-8601, "reason": "phone" | "away"}
+    reason 을 주면 그 사유의 구간을, 생략하면 가장 최근에 열린 구간을 닫는다.
+    """
 
     def post(self, request):
-        interval = (
-            DistractionInterval.objects
-            .filter(session__user=request.user, end_time__isnull=True)
-            .order_by("-start_time")
-            .first()
-        )
+        qs = DistractionInterval.objects.filter(session__user=request.user, end_time__isnull=True)
+        reason = request.data.get("reason")
+        if reason:
+            qs = qs.filter(reason=reason)
+        interval = qs.order_by("-start_time").first()
         if not interval:
             return _bad_request("진행 중인 딴짓 구간이 없습니다.")
         try:
