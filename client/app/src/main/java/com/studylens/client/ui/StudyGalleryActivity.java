@@ -14,6 +14,8 @@ import com.studylens.client.api.ApiClient;
 import com.studylens.client.api.ApiService;
 import com.studylens.client.model.StudyImage;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,10 +25,13 @@ import retrofit2.Response;
 
 public class StudyGalleryActivity extends AppCompatActivity {
 
+    /** 조회할 날짜 (yyyy-MM-dd). 없으면 오늘 */
+    public static final String EXTRA_DATE = "date";
+
     RecyclerView recyclerView;
     TextView tvTitle;
     ApiService api;
-    int selectedDay;
+    LocalDate date;
     List<StudyImage> imageList = new ArrayList<>();
     ImageAdapter adapter;
 
@@ -35,54 +40,52 @@ public class StudyGalleryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_study_gallery);
 
-        selectedDay = getIntent().getIntExtra("day", 1);
+        date = parseDate(getIntent().getStringExtra(EXTRA_DATE));
 
         recyclerView = findViewById(R.id.recyclerImages);
         tvTitle = findViewById(R.id.tvGalleryTitle);
 
-        tvTitle.setText(selectedDay + "일 공부 모습");
+        tvTitle.setText(date.equals(LocalDate.now())
+                ? "오늘의 공부 모습"
+                : date.getMonthValue() + "월 " + date.getDayOfMonth() + "일 공부 모습");
 
-        // ✅ Context 전달
-        api = ApiClient
-                .getClient(getApplicationContext())
-                .create(ApiService.class);
+        api = ApiClient.getClient(this).create(ApiService.class);
 
         adapter = new ImageAdapter(this, imageList);
-
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         recyclerView.setAdapter(adapter);
 
         loadImages();
     }
 
+    private static LocalDate parseDate(String value) {
+        if (value == null) return LocalDate.now();
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            return LocalDate.now();
+        }
+    }
+
     private void loadImages() {
-
-        api.getImages(selectedDay).enqueue(new Callback<List<StudyImage>>() {
+        api.getGallery(date.toString()).enqueue(new Callback<List<StudyImage>>() {
             @Override
-            public void onResponse(Call<List<StudyImage>> call,
-                                   Response<List<StudyImage>> response) {
-
-                if (!response.isSuccessful()) {
-                    Toast.makeText(
-                            StudyGalleryActivity.this,
-                            "이미지 로드 실패",
-                            Toast.LENGTH_SHORT
-                    ).show();
+            public void onResponse(Call<List<StudyImage>> call, Response<List<StudyImage>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    Toast.makeText(StudyGalleryActivity.this, "이미지 로드 실패", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
                 imageList.clear();
                 imageList.addAll(response.body());
                 adapter.notifyDataSetChanged();
+                if (imageList.isEmpty()) {
+                    Toast.makeText(StudyGalleryActivity.this, "이 날은 촬영된 공부 모습이 없어요", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onFailure(Call<List<StudyImage>> call, Throwable t) {
-                Toast.makeText(
-                        StudyGalleryActivity.this,
-                        "서버 오류",
-                        Toast.LENGTH_SHORT
-                ).show();
+                Toast.makeText(StudyGalleryActivity.this, "서버 오류", Toast.LENGTH_SHORT).show();
             }
         });
     }
