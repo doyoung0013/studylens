@@ -6,8 +6,9 @@
 
 판정 규칙
 - 다수결: 최근 VOTE_WINDOW_SEC 동안의 프레임 중 VOTE_RATIO 이상 감지돼야 '있음'
-- 시작: 사람 + (책 또는 노트북)이 MIN_STUDY_DETECTION_SEC 이상 연속으로 '있음'
-        → 시작 시각은 연속 감지가 시작된 시각
+- 시작: 사람이 MIN_STUDY_DETECTION_SEC 이상 연속으로 '있음' + 책/노트북이 최근 OBJECT_START_MEMORY_SEC 안에 감지됨
+        (YOLOv5 사전학습 모델은 책 인식이 불안정해서, 책은 매 프레임이 아니라 '최근에 한 번이라도'로 판단)
+        → 시작 시각은 두 조건이 함께 성립하기 시작한 시각
 - 종료: 사람이 PERSON_ABSENT_SEC 이상 없음  또는  책/노트북이 STUDY_OBJECT_MEMORY_SEC 이상 없음
         → 종료 시각은 '마지막으로 공부가 확인된 시각' (유예 시간은 공부 시간에서 제외)
 - 딴짓: 공부 중 휴대폰이 PHONE_MIN_SEC 이상 연속 '있음' → 시작 / PHONE_CLEAR_SEC 이상 없음 → 종료
@@ -28,6 +29,7 @@ class StateConfig:
     vote_window_sec: float = 1.5
     vote_ratio: float = 0.5
     min_study_detection_sec: float = 3
+    object_start_memory_sec: float = 10
     person_absent_sec: float = 120
     study_object_memory_sec: float = 180
     phone_min_sec: float = 5
@@ -40,6 +42,7 @@ class StateConfig:
             vote_window_sec=cfg.VOTE_WINDOW_SEC,
             vote_ratio=cfg.VOTE_RATIO,
             min_study_detection_sec=cfg.MIN_STUDY_DETECTION_SEC,
+            object_start_memory_sec=cfg.OBJECT_START_MEMORY_SEC,
             person_absent_sec=cfg.PERSON_ABSENT_SEC,
             study_object_memory_sec=cfg.STUDY_OBJECT_MEMORY_SEC,
             phone_min_sec=cfg.PHONE_MIN_SEC,
@@ -56,7 +59,8 @@ class StudyStateMachine:
     distracted: bool = False
 
     _window: deque = field(default_factory=deque)
-    _both_since: float = None          # 사람+공부물체가 연속으로 보이기 시작한 시각
+    _person_since: float = None        # 사람이 연속으로 보이기 시작한 시각
+    _object_streak_start: float = None # 책/노트북이 '최근 감지' 상태가 된 시각
     _last_person: float = None
     _last_object: float = None
     _phone_since: float = None         # 휴대폰이 연속으로 보이기 시작한 시각
@@ -81,23 +85,27 @@ class StudyStateMachine:
 
         if person:
             self._last_person = now
-        if study_object:
-            self._last_object = now
-
-        if person and study_object:
-            if self._both_since is None:
-                self._both_since = now
+            if self._person_since is None:
+                self._person_since = now
         else:
-            self._both_since = None
+            self._person_since = None
+
+        if study_object:
+            if self._last_object is None or now - self._last_object > cfg.object_start_memory_sec:
+                self._object_streak_start = now
+            self._last_object = now
 
         # ---------------- 시작 ----------------
         if not self.studying:
-            if self._both_since is not None and now - self._both_since >= cfg.min_study_detection_sec:
-                self.studying = True
-                self._reset_phone()
-                events.append(Event("start", self._both_since))
-                events.append(Event("capture", now))
-                self._last_capture = now
+            object_recent = self._last_object is not None and now - self._last_object <= cfg.object_start_memory_sec
+            if self._person_since is not None and object_recent:
+                since = max(self._person_since, self._object_streak_start)
+                if now - since >= cfg.min_study_detection_sec:
+                    self.studying = True
+                    self._reset_phone()
+                    events.append(Event("start", since))
+                    events.append(Event("capture", now))
+                    self._last_capture = now
             return events
 
         # ---------------- 종료 ----------------
@@ -109,7 +117,7 @@ class StudyStateMachine:
                 events.append(Event("distraction_end", min(self._last_phone, end_time)))
             events.append(Event("end", end_time))
             self.studying = False
-            self._both_since = None
+            self._person_since = None
             self._reset_phone()
             return events
 

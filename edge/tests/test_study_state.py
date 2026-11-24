@@ -40,6 +40,22 @@ class StudyStateTest(unittest.TestCase):
         # 시작 시각은 연속 감지가 시작된 시점
         self.assertAlmostEqual(events[0].time, DT, places=5)
 
+    def test_intermittent_book_detection_still_starts(self):
+        """책이 가끔만 잡혀도(가림·각도) 최근 10초 안에 보였으면 시작."""
+        events = []
+        t = 0.0
+        for i in range(int(6 * FPS)):
+            t += DT
+            book = i % 12 == 0          # 3초에 한 번만 책 감지
+            events += self.sm.observe(t, True, book)
+        self.assertIn("start", kinds(events))
+
+    def test_old_book_detection_does_not_start(self):
+        """책이 보인 지 10초가 넘었으면 사람만 있어도 시작하지 않음."""
+        self.sm.observe(0.1, False, True)
+        events, _ = run(self.sm, 11, 10, True, False)
+        self.assertEqual(events, [])
+
     def test_person_without_book_does_not_start(self):
         events, _ = run(self.sm, 0, 30, True, False)
         self.assertEqual(events, [])
