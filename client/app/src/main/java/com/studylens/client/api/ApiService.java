@@ -33,7 +33,53 @@ public interface ApiService {
     @GET("api/study/current/")
     Call<CurrentStatus> getCurrent();
 
-    // 회원가입 (가입 즉시 토큰 발급)
+    // ================= 회원가입 / 내 정보 =================
+
     @POST("api/auth/signup/")
     Call<SignupResponse> signup(@Body SignupRequest body);
+
+    @GET("api/me/")
+    Call<MeResponse> getMe();
+
+    // ================= 친구 =================
+
+    @GET("api/friends/requests/")
+    Call<FriendRequests> getFriendRequests();
+
+    @POST("api/friends/requests/")
+    Call<MessageResponse> sendFriendRequest(@Body SocialBodies.Username body);
+
+    /** action: accept | reject | cancel */
+    @POST("api/friends/requests/{id}/{action}/")
+    Call<MessageResponse> friendRequestAction(@Path("id") long requestId, @Path("action") String action);
+
+    @DELETE("api/friends/{userId}/")
+    Call<Void> deleteFriend(@Path("userId") long userId);
+
+    /** period: today | week | month */
+    @GET("api/friends/ranking/")
+    Call<RankingResponse> getFriendRanking(@Query("period") String period);
+
+    // ================= 스터디 그룹 =================
+
+    @GET("api/groups/")
+    Call<List<StudyGroup>> getGroups();
+
+    @POST("api/groups/")
+    Call<StudyGroup> createGroup(@Body SocialBodies.CreateGroup body);
+
+    @POST("api/groups/join/")
+    Call<StudyGroup> joinGroup(@Body SocialBodies.InviteCode body);
+
+    @GET("api/groups/{id}/")
+    Call<StudyGroup> getGroup(@Path("id") long groupId);
+
+    @POST("api/groups/{id}/leave/")
+    Call<MessageResponse> leaveGroup(@Path("id") long groupId);
+
+    @POST("api/groups/{id}/invite-code/")
+    Call<InviteCodeResponse> regenerateInviteCode(@Path("id") long groupId);
+
+    @GET("api/groups/{id}/ranking/")
+    Call<RankingResponse> getGroupRanking(@Path("id") long groupId, @Query("period") String period);
 }

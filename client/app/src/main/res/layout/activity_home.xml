@@ -311,5 +311,40 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginTop="20dp"/>
+
+        <!-- 4. 친구 / 스터디 그룹 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnFriends"
+                android:text="친구 랭킹"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="56dp"
+                android:backgroundTint="#16A34A"/>
+
+            <Button
+                android:id="@+id/btnGroups"
+                android:text="스터디 그룹"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="56dp"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#111827"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnLogout"
+            android:text="로그아웃"
+            android:textColor="#9CA3AF"
+            android:padding="12dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 </ScrollView>

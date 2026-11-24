@@ -18,6 +18,7 @@ import com.studylens.client.api.ApiClient;
 import com.studylens.client.api.ApiService;
 import com.studylens.client.model.CurrentStatus;
 import com.studylens.client.model.DailyStat;
+import com.studylens.client.model.MeResponse;
 import com.studylens.client.model.SessionSummary;
 import com.studylens.client.util.Prefs;
 import com.studylens.client.util.TimeFormat;
@@ -39,7 +40,7 @@ public class HomeActivity extends AppCompatActivity {
     private static final long LIVE_REFRESH_MS = 30_000;
 
     LinearLayout calendarGrid;
-    Button btnGallery;
+    Button btnGallery, btnFriends;
     ApiService api;
 
     TextView tvMonthTitle, tvMonthBadge, tvCardTitle;
@@ -95,6 +96,11 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(i);
         });
 
+        btnFriends = findViewById(R.id.btnFriends);
+        btnFriends.setOnClickListener(v -> startActivity(new Intent(this, FriendsActivity.class)));
+        findViewById(R.id.btnGroups).setOnClickListener(v -> startActivity(new Intent(this, GroupsActivity.class)));
+        findViewById(R.id.btnLogout).setOnClickListener(v -> goToLogin());
+
         buildCalendar();
         loadMonthStats();
     }
@@ -103,6 +109,23 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         handler.post(liveRefresher);
+        loadMe();
+    }
+
+    /** 받은 친구 요청 수를 친구 버튼에 표시 */
+    private void loadMe() {
+        api.getMe().enqueue(new Callback<MeResponse>() {
+            @Override
+            public void onResponse(Call<MeResponse> call, Response<MeResponse> res) {
+                if (!res.isSuccessful() || res.body() == null) return;
+                int pending = res.body().pendingFriendRequests;
+                btnFriends.setText(pending > 0 ? "친구 랭킹 · 요청 " + pending : "친구 랭킹");
+            }
+
+            @Override
+            public void onFailure(Call<MeResponse> call, Throwable t) {
+            }
+        });
     }
 
     @Override

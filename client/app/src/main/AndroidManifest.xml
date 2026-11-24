@@ -46,6 +46,20 @@
             android:name=".ui.SignupActivity"
             android:exported="false" />
 
+        <!-- 친구 랭킹 -->
+        <activity
+            android:name=".ui.FriendsActivity"
+            android:exported="false" />
+
+        <!-- 스터디 그룹 -->
+        <activity
+            android:name=".ui.GroupsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.GroupDetailActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
