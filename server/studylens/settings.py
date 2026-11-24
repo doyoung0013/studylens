@@ -158,6 +158,8 @@ REST_FRAMEWORK = {
     # 무차별 가입/요청 방지 (ScopedRateThrottle 을 쓰는 뷰에만 적용)
     "DEFAULT_THROTTLE_RATES": {
         "signup": os.environ.get("STUDYLENS_SIGNUP_RATE", "10/hour"),
+        "friend_request": "60/hour",
+        "group_join": "30/hour",
     },
 }
 

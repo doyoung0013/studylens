@@ -77,3 +77,78 @@ class StudyImage(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.captured_at}"
+
+
+# ==================================================================
+# 소셜 — 친구 & 스터디 그룹
+# ==================================================================
+class Friendship(models.Model):
+    """
+    친구 관계. from_user 가 요청을 보내고 to_user 가 수락하면 ACCEPTED.
+    두 사용자 사이에는 방향과 관계없이 한 행만 존재한다.
+    """
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    STATUS_CHOICES = [(PENDING, "대기"), (ACCEPTED, "수락")]
+
+    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friend_requests_sent")
+    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friend_requests_received")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["from_user", "to_user"], name="unique_friendship_pair"),
+            models.CheckConstraint(condition=~models.Q(from_user=models.F("to_user")), name="no_self_friendship"),
+        ]
+
+    def __str__(self):
+        return f"{self.from_user} → {self.to_user} ({self.status})"
+
+    @classmethod
+    def between(cls, a, b):
+        return cls.objects.filter(
+            models.Q(from_user=a, to_user=b) | models.Q(from_user=b, to_user=a)
+        ).first()
+
+    @classmethod
+    def friend_ids(cls, user):
+        rows = cls.objects.filter(
+            models.Q(from_user=user) | models.Q(to_user=user), status=cls.ACCEPTED
+        ).values_list("from_user_id", "to_user_id")
+        return {b if a == user.id else a for a, b in rows}
+
+
+class StudyGroup(models.Model):
+    """초대 코드로 가입하는 스터디 그룹."""
+    MAX_MEMBERS = 30
+
+    name = models.CharField(max_length=30)
+    description = models.CharField(max_length=200, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owned_groups")
+    invite_code = models.CharField(max_length=8, unique=True)
+    members = models.ManyToManyField(User, through="GroupMembership", related_name="study_groups")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class GroupMembership(models.Model):
+    group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="group_memberships")
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["joined_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["group", "user"], name="unique_group_member"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} in {self.group}"

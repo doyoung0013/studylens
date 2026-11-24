@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import DistractionInterval, StudyImage, StudySession
+from .models import DistractionInterval, Friendship, StudyImage, StudySession
 from .serializers import DistractionSerializer, StudyImageSerializer, StudySessionSerializer
 from .services import (
     InvalidParam,
@@ -21,6 +21,7 @@ from .services import (
     parse_client_time,
     parse_date_param,
     process_uploaded_image,
+    build_ranking,
     session_summary,
     signed_image_path,
     verify_image_signature,
@@ -136,8 +137,24 @@ def dashboard_view(request):
         "current": current,
         "current_minutes": current["elapsed_seconds"] // 60 if current else 0,
         "chart": chart,
+        "ranking": _friend_ranking_preview(user),
     }
     return render(request, "dashboard.html", context)
+
+
+def _friend_ranking_preview(user, limit=5):
+    """대시보드용: 최근 7일 친구 랭킹 상위 N명 (+ 내 순위)."""
+    from django.contrib.auth.models import User
+
+    ids = Friendship.friend_ids(user)
+    if not ids:
+        return None
+    data = build_ranking(User.objects.filter(id__in=ids | {user.id}), user, "week")
+    rows = data["ranking"]
+    for r in rows:
+        r["focus_minutes"] = r["focus_seconds"] // 60
+    me = next(r for r in rows if r["is_me"])
+    return {"top": rows[:limit], "me": me, "total": len(rows)}
 
 
 # ==================================================================

@@ -28,4 +28,23 @@ urlpatterns = [
     path("stats/daily/", views.DailyStatsView.as_view(), name="stats_daily"),
     path("gallery/", views.GalleryView.as_view(), name="gallery"),
     path("gallery/today/", views.GalleryView.as_view(), name="today_gallery"),
+
+    # Friends
+    path("friends/", social.FriendListView.as_view(), name="friends"),
+    path("friends/<int:user_id>/", social.FriendDeleteView.as_view(), name="friend_delete"),
+    path("friends/requests/", social.FriendRequestView.as_view(), name="friend_requests"),
+    path(
+        "friends/requests/<int:request_id>/<str:action>/",
+        social.FriendRequestActionView.as_view(),
+        name="friend_request_action",
+    ),
+    path("friends/ranking/", social.FriendRankingView.as_view(), name="friend_ranking"),
+
+    # Study groups
+    path("groups/", social.GroupListCreateView.as_view(), name="groups"),
+    path("groups/join/", social.GroupJoinView.as_view(), name="group_join"),
+    path("groups/<int:group_id>/", social.GroupDetailView.as_view(), name="group_detail"),
+    path("groups/<int:group_id>/leave/", social.GroupLeaveView.as_view(), name="group_leave"),
+    path("groups/<int:group_id>/invite-code/", social.GroupInviteCodeView.as_view(), name="group_invite_code"),
+    path("groups/<int:group_id>/ranking/", social.GroupRankingView.as_view(), name="group_ranking"),
 ]

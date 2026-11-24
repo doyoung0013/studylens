@@ -50,6 +50,15 @@
         .legend { display: flex; gap: 16px; font-size: 12px; color: #6b7280; margin-top: 12px; }
         .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 
+        .ranking { list-style: none; margin: 0; padding: 0; }
+        .ranking li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 15px; }
+        .ranking li:last-child { border-bottom: 0; }
+        .ranking .rank { width: 28px; font-weight: 700; color: #4f46e5; text-align: center; }
+        .ranking .name { flex: 1; }
+        .ranking .me { background: #eef2ff; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+        .ranking .live { font-size: 11px; color: #16a34a; background: #dcfce7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
+        .ranking .time { font-weight: 600; }
+
         .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
         .gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,.1); }
         .placeholder { color: #9ca3af; font-size: 14px; }
@@ -135,6 +144,26 @@
             <span><i style="background:#4f46e5"></i>순공부</span>
             <span><i style="background:#e0e7ff"></i>딴짓 포함 전체</span>
         </div>
+    </div>
+
+    <div class="section">
+        <h2>친구 랭킹 <small style="color:#6b7280;font-weight:400;font-size:13px">최근 7일 순공부</small></h2>
+        {% if ranking %}
+            <ul class="ranking">
+                {% for r in ranking.top %}
+                    <li class="{% if r.is_me %}me{% endif %}">
+                        <span class="rank">{{ r.rank }}</span>
+                        <span class="name">{{ r.username }}{% if r.is_me %} (나){% endif %}{% if r.studying_now %}<span class="live">공부 중</span>{% endif %}</span>
+                        <span class="time">{{ r.focus_minutes }}분</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if ranking.me.rank > 5 %}
+                <div class="placeholder" style="margin-top:10px">내 순위: {{ ranking.me.rank }}위 / {{ ranking.total }}명 · {{ ranking.me.focus_minutes }}분</div>
+            {% endif %}
+        {% else %}
+            <div class="placeholder">아직 친구가 없습니다. 앱에서 친구의 아이디로 친구 요청을 보내 보세요.</div>
+        {% endif %}
     </div>
 
     <div class="section">

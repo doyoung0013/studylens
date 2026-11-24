@@ -248,3 +248,125 @@ def verify_image_signature(image_id, token):
 
 def signed_image_path(image):
     return f"{reverse('image_file', args=[image.id])}?token={sign_image(image.id)}"
+
+
+# ------------------------------------------------------------------
+# 랭킹 (친구 / 스터디 그룹)
+# ------------------------------------------------------------------
+PERIODS = ("today", "week", "month")
+
+
+def period_range(period, today=None):
+    """
+    랭킹 기간 → (start_date, end_date)
+    - today: 오늘
+    - week : 오늘 포함 최근 7일
+    - month: 이번 달 1일 ~ 오늘
+    """
+    today = today or timezone.localdate()
+    if period == "today":
+        return today, today
+    if period == "week":
+        return today - timedelta(days=6), today
+    if period == "month":
+        return today.replace(day=1), today
+    raise InvalidParam("period는 today, week, month 중 하나여야 합니다.")
+
+
+def totals_by_user(user_ids, start_date, end_date, now=None):
+    """
+    여러 사용자의 기간 합계를 쿼리 2번으로 계산.
+    반환: {user_id: {"total_seconds", "distracted_seconds", "focus_seconds", "focus_rate"}}
+    """
+    now = now or timezone.now()
+    user_ids = list(user_ids)
+    range_start, _ = local_day_bounds(start_date)
+    _, range_end = local_day_bounds(end_date)
+
+    def accumulate(rows):
+        totals = dict.fromkeys(user_ids, 0.0)
+        for uid, s_time, e_time in rows:
+            seg_start = max(s_time, range_start)
+            seg_end = min(e_time or now, range_end, now)
+            if seg_end > seg_start:
+                totals[uid] += (seg_end - seg_start).total_seconds()
+        return totals
+
+    sessions = (
+        StudySession.objects
+        .filter(user_id__in=user_ids, start_time__lt=range_end)
+        .exclude(end_time__isnull=False, end_time__lte=range_start)
+        .values_list("user_id", "start_time", "end_time")
+    )
+    distractions = (
+        DistractionInterval.objects
+        .filter(session__user_id__in=user_ids, start_time__lt=range_end)
+        .exclude(end_time__isnull=False, end_time__lte=range_start)
+        .values_list("session__user_id", "start_time", "end_time")
+    )
+    study = accumulate(sessions)
+    distracted = accumulate(distractions)
+
+    result = {}
+    for uid in user_ids:
+        total = int(study[uid])
+        dist = min(int(distracted[uid]), total)
+        result[uid] = {
+            "total_seconds": total,
+            "distracted_seconds": dist,
+            "focus_seconds": total - dist,
+            "focus_rate": focus_rate(total, dist),
+        }
+    return result
+
+
+def build_ranking(users, me, period, now=None):
+    """
+    순공부 시간(focus_seconds) 기준 랭킹. 동점은 같은 순위 (1, 1, 3 ...).
+    공개 정보는 시간 합계와 '지금 공부 중' 여부뿐이다. (사진·세부 기록은 노출하지 않음)
+    """
+    start, end = period_range(period, timezone.localdate(now) if now else None)
+    users = list(users)
+    totals = totals_by_user([u.id for u in users], start, end, now=now)
+    studying_now = set(
+        StudySession.objects.filter(user_id__in=[u.id for u in users], end_time__isnull=True)
+        .values_list("user_id", flat=True)
+    )
+
+    entries = [
+        {
+            "user_id": u.id,
+            "username": u.username,
+            "is_me": u.id == me.id,
+            "studying_now": u.id in studying_now,
+            **totals[u.id],
+        }
+        for u in users
+    ]
+    entries.sort(key=lambda e: (-e["focus_seconds"], -e["total_seconds"], e["username"]))
+
+    rank, prev = 0, None
+    for i, e in enumerate(entries, start=1):
+        if e["focus_seconds"] != prev:
+            rank, prev = i, e["focus_seconds"]
+        e["rank"] = rank
+
+    return {"period": period, "start": start.isoformat(), "end": end.isoformat(), "ranking": entries}
+
+
+# ------------------------------------------------------------------
+# 스터디 그룹 초대 코드
+# ------------------------------------------------------------------
+_INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # 헷갈리는 0/O, 1/I 제외
+
+
+def generate_invite_code():
+    import secrets
+
+    from .models import StudyGroup
+
+    for _ in range(20):
+        code = "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(8))
+        if not StudyGroup.objects.filter(invite_code=code).exists():
+            return code
+    raise RuntimeError("초대 코드 생성 실패")

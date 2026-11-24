@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DistractionInterval, StudyImage, StudySession
+from .models import DistractionInterval, Friendship, GroupMembership, StudyGroup, StudyImage, StudySession
 
 
 class DistractionInline(admin.TabularInline):
@@ -19,3 +19,21 @@ class StudySessionAdmin(admin.ModelAdmin):
 class StudyImageAdmin(admin.ModelAdmin):
     list_display = ("user", "session", "captured_at", "created_at")
     list_filter = ("user",)
+
+
+@admin.register(Friendship)
+class FriendshipAdmin(admin.ModelAdmin):
+    list_display = ("from_user", "to_user", "status", "created_at", "accepted_at")
+    list_filter = ("status",)
+
+
+class MembershipInline(admin.TabularInline):
+    model = GroupMembership
+    extra = 0
+
+
+@admin.register(StudyGroup)
+class StudyGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "owner", "invite_code", "created_at")
+    search_fields = ("name", "invite_code")
+    inlines = [MembershipInline]
