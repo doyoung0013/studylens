@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F9FAFB"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <TextView
+            android:text="회원가입"
+            android:layout_marginTop="32dp"
+            style="@style/ScreenTitle"/>
+
+        <TextView
+            android:text="계정을 만들고 친구와 함께 공부해 보세요"
+            android:textColor="#6B7280"
+            android:textSize="14sp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="32dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/signupUsername"
+            android:hint="아이디 (영문·숫자·_ . 4~20자)"
+            android:inputType="text"
+            android:autofillHints="username"
+            style="@style/FormInput"/>
+
+        <EditText
+            android:id="@+id/signupPassword"
+            android:hint="비밀번호 (8자 이상)"
+            android:inputType="textPassword"
+            android:autofillHints="newPassword"
+            android:layout_marginTop="12dp"
+            style="@style/FormInput"/>
+
+        <EditText
+            android:id="@+id/signupPassword2"
+            android:hint="비밀번호 확인"
+            android:inputType="textPassword"
+            android:autofillHints="newPassword"
+            android:layout_marginTop="12dp"
+            style="@style/FormInput"/>
+
+        <TextView
+            android:id="@+id/signupError"
+            android:textColor="#DC2626"
+            android:textSize="13sp"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnDoSignup"
+            android:text="가입하기"
+            android:layout_marginTop="24dp"
+            style="@style/PrimaryButton"/>
+
+        <TextView
+            android:id="@+id/btnGoLogin"
+            android:text="이미 계정이 있나요? 로그인"
+            android:textColor="#16A34A"
+            android:textStyle="bold"
+            android:padding="12dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>

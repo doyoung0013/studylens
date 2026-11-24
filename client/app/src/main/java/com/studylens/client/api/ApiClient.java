@@ -45,8 +45,10 @@ public class ApiClient {
                             .build());
                 })
                 .authenticator((route, response) -> {
-                    // 로그인 요청 실패이거나 이미 한 번 재시도한 요청이면 포기
-                    if (response.request().url().encodedPath().endsWith("auth/login/")) return null;
+                    // 로그인/가입/갱신 요청이거나 이미 한 번 재시도한 요청이면 포기
+                    String path = response.request().url().encodedPath();
+                    if (path.endsWith("auth/login/") || path.endsWith("auth/signup/")
+                            || path.endsWith("auth/refresh/")) return null;
                     if (response.priorResponse() != null) return null;
 
                     String refresh = Prefs.getRefreshToken(app);

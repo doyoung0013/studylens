@@ -32,4 +32,8 @@ public interface ApiService {
     // 실시간 상태 (지금 공부 중인지, 몇 분째인지)
     @GET("api/study/current/")
     Call<CurrentStatus> getCurrent();
+
+    // 회원가입 (가입 즉시 토큰 발급)
+    @POST("api/auth/signup/")
+    Call<SignupResponse> signup(@Body SignupRequest body);
 }

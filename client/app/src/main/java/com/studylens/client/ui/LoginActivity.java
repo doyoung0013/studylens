@@ -47,6 +47,9 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        findViewById(R.id.btnSignup).setOnClickListener(v ->
+                startActivity(new Intent(this, SignupActivity.class)));
+
         loginBtn.setOnClickListener(v -> {
             if (!isLoggingIn) {
                 doLogin();
