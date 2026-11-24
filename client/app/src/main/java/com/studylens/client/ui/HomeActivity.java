@@ -18,7 +18,9 @@ import com.studylens.client.api.ApiClient;
 import com.studylens.client.api.ApiService;
 import com.studylens.client.model.CurrentStatus;
 import com.studylens.client.model.DailyStat;
+import com.studylens.client.model.GoalBody;
 import com.studylens.client.model.MeResponse;
+import com.studylens.client.api.ApiErrors;
 import com.studylens.client.model.SessionSummary;
 import com.studylens.client.util.Prefs;
 import com.studylens.client.util.TimeFormat;
@@ -36,7 +38,7 @@ import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private static final int GOAL_MINUTES = 60;
+    private int goalMinutes = 60;  // 서버(/api/me/)의 하루 목표로 갱신
     private static final long LIVE_REFRESH_MS = 30_000;
 
     LinearLayout calendarGrid;
@@ -44,8 +46,9 @@ public class HomeActivity extends AppCompatActivity {
     ApiService api;
 
     TextView tvMonthTitle, tvMonthBadge, tvCardTitle;
-    TextView tvTodayMinutes, tvFocusInfo;
+    TextView tvTodayMinutes, tvFocusInfo, tvGoal, tvGoalSummary;
     ProgressBar progressToday;
+    BarChartView goalChart;
 
     // 실시간 상태
     View liveDot;
@@ -79,7 +82,11 @@ public class HomeActivity extends AppCompatActivity {
         tvTodayMinutes = findViewById(R.id.tvTodayMinutes);
         tvFocusInfo = findViewById(R.id.tvFocusInfo);
         progressToday = findViewById(R.id.progressToday);
-        progressToday.setMax(GOAL_MINUTES);
+        progressToday.setMax(goalMinutes);
+        tvGoal = findViewById(R.id.tvGoal);
+        tvGoalSummary = findViewById(R.id.tvGoalSummary);
+        goalChart = findViewById(R.id.goalChart);
+        tvGoal.setOnClickListener(v -> showGoalDialog());
 
         liveDot = findViewById(R.id.liveDot);
         tvLiveStatus = findViewById(R.id.tvLiveStatus);
@@ -110,6 +117,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
         handler.post(liveRefresher);
         loadMe();
+        loadWeekGoal();
     }
 
     /** 받은 친구 요청 수를 친구 버튼에 표시 */
@@ -118,6 +126,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<MeResponse> call, Response<MeResponse> res) {
                 if (!res.isSuccessful() || res.body() == null) return;
+                if (res.body().dailyGoalMinutes > 0) applyGoal(res.body().dailyGoalMinutes);
                 int pending = res.body().pendingFriendRequests;
                 btnFriends.setText(pending > 0 ? "친구 랭킹 · 요청 " + pending : "친구 랭킹");
             }
@@ -132,6 +141,98 @@ public class HomeActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(liveRefresher);
+    }
+
+    // ==============================================================
+    // 하루 목표
+    // ==============================================================
+    private void applyGoal(int minutes) {
+        goalMinutes = minutes;
+        progressToday.setMax(goalMinutes);
+        tvGoal.setText("분 순공부 / 목표 " + TimeFormat.minutes(goalMinutes * 60) + " ✎");
+        updateCard();
+    }
+
+    private void showGoalDialog() {
+        EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(goalMinutes));
+        input.setSelectAllOnFocus(true);
+        int pad = dp(20);
+        FrameLayout box = new FrameLayout(this);
+        box.setPadding(pad, pad / 2, pad, 0);
+        box.addView(input);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("하루 목표 순공부 시간 (분)")
+                .setMessage("10분 ~ 960분(16시간)")
+                .setView(box)
+                .setPositiveButton("저장", (d, w) -> {
+                    int minutes;
+                    try {
+                        minutes = Integer.parseInt(input.getText().toString().trim());
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "숫자를 입력해 주세요", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    saveGoal(minutes);
+                })
+                .setNegativeButton("취소", null)
+                .show();
+    }
+
+    private void saveGoal(int minutes) {
+        api.updateGoal(new GoalBody(minutes)).enqueue(new Callback<GoalBody>() {
+            @Override
+            public void onResponse(Call<GoalBody> call, Response<GoalBody> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    applyGoal(res.body().dailyGoalMinutes);
+                    loadMonthStats();
+                    loadWeekGoal();
+                    Toast.makeText(HomeActivity.this, "목표를 저장했어요", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(HomeActivity.this, ApiErrors.message(res, "저장 실패"), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GoalBody> call, Throwable t) {
+                Toast.makeText(HomeActivity.this, "네트워크 오류", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /** 최근 7일 목표 달성 막대 그래프 */
+    private void loadWeekGoal() {
+        api.getDailyStats(7).enqueue(new Callback<List<DailyStat>>() {
+            @Override
+            public void onResponse(Call<List<DailyStat>> call, Response<List<DailyStat>> res) {
+                if (!res.isSuccessful() || res.body() == null || res.body().isEmpty()) return;
+                List<DailyStat> days = res.body();
+                int n = days.size();
+                float[] values = new float[n];
+                int[] colors = new int[n];
+                String[] labels = new String[n];
+                String[] texts = new String[n];
+                int achieved = 0;
+                for (int i = 0; i < n; i++) {
+                    DailyStat d = days.get(i);
+                    values[i] = d.focusSeconds / 60f;
+                    colors[i] = Color.parseColor(d.goalAchieved ? "#16A34A" : "#A5B4FC");
+                    LocalDate date = LocalDate.parse(d.date);
+                    labels[i] = date.getMonthValue() + "/" + date.getDayOfMonth();
+                    texts[i] = d.focusSeconds >= 60 ? Math.round(Math.min(d.goalRate, 999)) + "%" : "";
+                    if (d.goalAchieved) achieved++;
+                }
+                int goal = days.get(n - 1).goalSeconds / 60;
+                goalChart.setData(values, colors, labels, texts, goal, "목표 " + goal + "분");
+                tvGoalSummary.setText(n + "일 중 " + achieved + "일 달성 · 막대 위 숫자는 달성률");
+            }
+
+            @Override
+            public void onFailure(Call<List<DailyStat>> call, Throwable t) {
+            }
+        });
     }
 
     // ==============================================================
@@ -327,7 +428,7 @@ public class HomeActivity extends AppCompatActivity {
         int focusMin = stat != null ? stat.focusSeconds / 60 : 0;
 
         tvTodayMinutes.setText(String.valueOf(focusMin));
-        progressToday.setProgress(Math.min(focusMin, GOAL_MINUTES));
+        progressToday.setProgress(Math.min(focusMin, goalMinutes));
 
         if (stat == null || stat.totalSeconds == 0) {
             tvFocusInfo.setText("공부 기록이 없어요");

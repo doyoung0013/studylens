@@ -19,4 +19,20 @@ public class DailyStat {
 
     @SerializedName("focus_rate")
     public Double focusRate;            // 집중도(%) — 기록이 없으면 null
+
+    @SerializedName("goal_seconds")
+    public int goalSeconds;             // 하루 목표 순공부 시간
+
+    @SerializedName("goal_rate")
+    public double goalRate;             // 목표 달성률(%) — 100 초과 가능
+
+    @SerializedName("goal_achieved")
+    public boolean goalAchieved;
+
+    // 리포트(/api/study/report/)의 daily 항목에서만 채워짐
+    @SerializedName("away_count")
+    public int awayCount;
+
+    @SerializedName("phone_count")
+    public int phoneCount;
 }

@@ -41,6 +41,10 @@ public interface ApiService {
     @GET("api/me/")
     Call<MeResponse> getMe();
 
+    // 하루 목표 순공부 시간(분) 변경
+    @PATCH("api/me/goal/")
+    Call<GoalBody> updateGoal(@Body GoalBody body);
+
     // ================= 친구 =================
 
     @GET("api/friends/requests/")

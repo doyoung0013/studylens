@@ -6,6 +6,9 @@ public class MeResponse {
     public long id;
     public String username;
 
+    @SerializedName("daily_goal_minutes")
+    public int dailyGoalMinutes;
+
     @SerializedName("friend_count")
     public int friendCount;
 
