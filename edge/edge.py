@@ -30,6 +30,8 @@ EVENT_MESSAGES = {
     "end": "🛑 공부 종료",
     "distraction_start": "📱 딴짓(휴대폰) 감지 시작",
     "distraction_end": "✅ 딴짓 종료",
+    "away_start": "🚶 자리 이탈 감지",
+    "away_end": "🪑 자리 복귀",
     "capture": "📤 이미지 업로드 예약",
 }
 
@@ -65,7 +67,9 @@ class ThrottledLogger:
 
 
 def draw_status(image, state):
-    if state.distracted:
+    if state.away:
+        text, color = "AWAY", (0, 0, 255)
+    elif state.distracted:
         text, color = "DISTRACTED (phone)", (0, 165, 255)
     elif state.studying:
         text, color = "STUDYING", (0, 200, 0)
@@ -139,7 +143,9 @@ def main():
                     throttle.warning("shake", "⚠️ 카메라 흔들림 → 프레임 무시")
                 else:
                     detection, results = detector.detect(frame)
-                    events = state.observe(now, detection.person, detection.study_object, detection.phone)
+                    events = state.observe(
+                        now, detection.person, detection.study_object, detection.phone, detection.person_box
+                    )
                     for event in events:
                         image = encode_for_upload(frame) if event.kind == "capture" else None
                         client.enqueue(event.kind, event.time, image)

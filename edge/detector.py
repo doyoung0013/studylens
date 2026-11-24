@@ -13,6 +13,8 @@ class Detection:
     book: bool
     laptop: bool
     phone: bool
+    # 가장 큰 사람 박스의 (중심x, 중심y, 너비, 높이) — 프레임 크기 대비 0~1 비율. 없으면 None
+    person_box: tuple = None
 
     @property
     def study_object(self):
@@ -56,11 +58,12 @@ class Detector:
     def detect(self, frame):
         """BGR 프레임 → (Detection, YOLO results)."""
         results = self.model(np.ascontiguousarray(frame[..., ::-1]))  # YOLOv5 hub 모델은 RGB 입력
-        return parse_results(results.xyxy[0].tolist()), results
+        h, w = frame.shape[:2]
+        return parse_results(results.xyxy[0].tolist(), w, h), results
 
 
-def parse_results(rows):
-    """[[x1, y1, x2, y2, conf, cls], ...] → Detection (클래스별 임계값 적용)."""
+def parse_results(rows, width=1, height=1):
+    """[[x1, y1, x2, y2, conf, cls], ...] → Detection (클래스별 임계값 적용 + 사람 박스 위치)."""
     thresholds = {
         config.CLASS_PERSON: config.PERSON_CONF_THRESHOLD,
         config.CLASS_BOOK: config.BOOK_CONF_THRESHOLD,
@@ -68,11 +71,21 @@ def parse_results(rows):
         config.CLASS_CELL_PHONE: config.PHONE_CONF_THRESHOLD,
     }
     found = set()
-    for *_box, conf, cls in rows:
+    best_person, best_area = None, 0.0
+    for x1, y1, x2, y2, conf, cls in rows:
         cls = int(cls)
         if cls in thresholds and conf >= thresholds[cls]:
             found.add(cls)
+            if cls == config.CLASS_PERSON:
+                area = (x2 - x1) * (y2 - y1)
+                if area > best_area:
+                    best_area = area
+                    best_person = (
+                        (x1 + x2) / 2 / width, (y1 + y2) / 2 / height,
+                        (x2 - x1) / width, (y2 - y1) / height,
+                    )
     return Detection(
+        person_box=best_person,
         person=config.CLASS_PERSON in found,
         book=config.CLASS_BOOK in found,
         laptop=config.CLASS_LAPTOP in found,

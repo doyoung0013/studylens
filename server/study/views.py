@@ -40,6 +40,8 @@ def _close_session(session, end_time):
     """세션과 그 안의 진행 중 딴짓 구간을 end_time 으로 닫는다."""
     session.end_time = end_time
     session.save(update_fields=["end_time"])
+    # 세션 종료 시각 이후에 시작된 구간(예: 사람이 떠난 뒤의 이탈)은 의미가 없으므로 삭제
+    session.distractions.filter(start_time__gte=end_time).delete()
     session.distractions.filter(end_time__isnull=True).update(end_time=end_time)
     # 세션 종료 이후로 늘어난 딴짓 구간은 잘라낸다
     session.distractions.filter(end_time__gt=end_time).update(end_time=end_time)

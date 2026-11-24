@@ -10,13 +10,19 @@ FPS = 4
 DT = 1 / FPS
 
 
-def run(sm, start, seconds, person, obj, phone=False):
+SEATED = (0.5, 0.6, 0.4, 0.7)      # 화면 가운데 앉은 자세
+STANDING = (0.85, 0.3, 0.3, 0.9)   # 옆으로 크게 벗어남
+
+
+def run(sm, start, seconds, person, obj, phone=False, box=None):
     """start 부터 seconds 동안 같은 관측을 FPS 로 넣고 (이벤트 목록, 마지막 시각) 반환."""
     events = []
     t = start
+    if box is None and person:
+        box = SEATED
     for _ in range(int(seconds * FPS)):
         t += DT
-        events += sm.observe(t, person, obj, phone)
+        events += sm.observe(t, person, obj, phone, box if person else None)
     return events, t
 
 
@@ -110,6 +116,59 @@ class StudyStateTest(unittest.TestCase):
         events, _ = run(self.sm, t, 125, False, False, phone=False)
         k = kinds(events)
         self.assertLess(k.index("distraction_end"), k.index("end"))
+
+    # ---------------- 자리 이탈 ----------------
+    def test_short_absence_is_away_not_end(self):
+        _, t = run(self.sm, 0, 10, True, True)
+        events, t = run(self.sm, t, 30, False, True)       # 30초 자리 비움 (종료 기준 120초 미만)
+        self.assertEqual(kinds(events), ["away_start"])
+        self.assertTrue(self.sm.away and self.sm.studying)
+        away_start = events[0].time
+        self.assertLess(away_start - 10, 1.5)               # 사라진 시점 기준
+        events, t = run(self.sm, t, 5, True, True)
+        self.assertEqual(kinds(events), ["away_end"])
+        self.assertFalse(self.sm.away)
+
+    def test_brief_absence_ignored(self):
+        _, t = run(self.sm, 0, 10, True, True)
+        events, t = run(self.sm, t, 5, False, True)         # 5초는 이탈 아님
+        events2, _ = run(self.sm, t, 5, True, True)
+        self.assertEqual(events + events2, [])
+
+    def test_upper_body_displacement_is_away(self):
+        _, t = run(self.sm, 0, 10, True, True, box=SEATED)
+        events, t = run(self.sm, t, 15, True, True, box=STANDING)
+        self.assertEqual(kinds(events), ["away_start"])
+        events, t = run(self.sm, t, 5, True, True, box=SEATED)
+        self.assertEqual(kinds(events), ["away_end"])
+
+    def test_small_posture_change_not_away(self):
+        _, t = run(self.sm, 0, 10, True, True, box=SEATED)
+        events, _ = run(self.sm, t, 60, True, True, box=(0.6, 0.65, 0.4, 0.7))
+        self.assertNotIn("away_start", kinds(events))
+
+    def test_moved_seat_rebases_and_cancels_away(self):
+        _, t = run(self.sm, 0, 10, True, True, box=SEATED)
+        events, t = run(self.sm, t, 65, True, True, box=STANDING)   # 옆자리로 옮겨 계속 공부
+        k = kinds(events)
+        self.assertEqual(k.count("away_start"), 1)
+        self.assertEqual(k.count("away_end"), 1)
+        start = [e for e in events if e.kind == "away_start"][0]
+        end = [e for e in events if e.kind == "away_end"][0]
+        self.assertEqual(start.time, end.time)                        # 길이 0 → 구간 취소
+        events, _ = run(self.sm, t, 30, True, True, box=STANDING)    # 새 기준점에서는 정상
+        self.assertEqual(events, [])
+
+    def test_no_capture_while_away(self):
+        _, t = run(self.sm, 0, 10, True, True)
+        events, _ = run(self.sm, t, 110, False, True)
+        self.assertNotIn("capture", kinds(events))
+
+    def test_session_end_closes_away_first(self):
+        _, t = run(self.sm, 0, 10, True, True)
+        events, _ = run(self.sm, t, 125, False, True)
+        k = kinds(events)
+        self.assertEqual(k, ["away_start", "away_end", "end"])
 
     def test_shutdown(self):
         self.assertEqual(self.sm.shutdown(100), [])

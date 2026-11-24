@@ -23,7 +23,18 @@ ENDPOINTS = {
     "end": ("study/end/", "end_time"),
     "distraction_start": ("study/distraction/start/", "start_time"),
     "distraction_end": ("study/distraction/end/", "end_time"),
+    "away_start": ("study/distraction/start/", "start_time"),
+    "away_end": ("study/distraction/end/", "end_time"),
     "capture": ("image/upload/", "captured_at"),
+}
+
+
+# 딴짓 이벤트 → 서버 reason
+REASONS = {
+    "distraction_start": "phone",
+    "distraction_end": "phone",
+    "away_start": "away",
+    "away_end": "away",
 }
 
 
@@ -163,8 +174,8 @@ class StudyLensClient:
                     )
             else:
                 payload = {time_field: stamp}
-                if item["kind"] == "distraction_start":
-                    payload["reason"] = "phone"
+                if item["kind"] in REASONS:
+                    payload["reason"] = REASONS[item["kind"]]
                 res = self._authorized_post(path, json=payload)
         except AuthError:
             raise

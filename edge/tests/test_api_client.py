@@ -66,12 +66,17 @@ class ApiClientTest(unittest.TestCase):
         self.client.enqueue("capture", 1001.0, b"\xff\xd8jpeg")
         self.client.enqueue("distraction_start", 1002.0)
         self.client.enqueue("distraction_end", 1003.0)
+        self.client.enqueue("away_start", 1003.5)
+        self.client.enqueue("away_end", 1003.8)
         self.client.enqueue("end", 1004.0)
         self.assertTrue(self.client.flush_once())
         self.assertEqual(self.paths(), [
             "auth/login/", "study/start/", "image/upload/",
+            "study/distraction/start/", "study/distraction/end/",
             "study/distraction/start/", "study/distraction/end/", "study/end/",
         ])
+        reasons = [c[1]["json"].get("reason") for c in self.http.calls if c[0].startswith("study/distraction/")]
+        self.assertEqual(reasons, ["phone", "phone", "away", "away"])
         start_call = self.http.calls[1][1]
         self.assertIn("start_time", start_call["json"])
         self.assertTrue(start_call["json"]["start_time"].startswith("1970-01-01T00:16:40"))
