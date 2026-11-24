@@ -1,12 +1,15 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from . import social_views as social
 from . import views
 
 urlpatterns = [
     # Auth (JWT)
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("auth/signup/", social.SignupView.as_view(), name="signup"),
+    path("me/", social.MeView.as_view(), name="me"),
 
     # Study session
     path("study/start/", views.StudyStartView.as_view(), name="study_start"),

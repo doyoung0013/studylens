@@ -155,6 +155,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    # 무차별 가입/요청 방지 (ScopedRateThrottle 을 쓰는 뷰에만 적용)
+    "DEFAULT_THROTTLE_RATES": {
+        "signup": os.environ.get("STUDYLENS_SIGNUP_RATE", "10/hour"),
+    },
 }
 
 SIMPLE_JWT = {

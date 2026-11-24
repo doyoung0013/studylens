@@ -66,6 +66,29 @@ def login_page(request):
     return render(request, "login.html")
 
 
+@require_http_methods(["GET", "POST"])
+def signup_page(request):
+    from django.contrib.auth.models import User
+
+    from .social_views import SignupSerializer, signup_errors_to_message
+
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        serializer = SignupSerializer(data=request.POST)
+        if serializer.is_valid():
+            user = serializer.save()
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            return redirect("dashboard")
+        return render(request, "signup.html", {
+            "error": signup_errors_to_message(serializer.errors),
+            "username": request.POST.get("username", ""),
+        })
+
+    return render(request, "signup.html")
+
+
 @require_POST
 def logout_page(request):
     logout(request)

@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>StudyLens | 로그인</title>
     <style>
         * {
@@ -21,6 +22,7 @@
         .login-box {
             background: white;
             width: 360px;
+            max-width: calc(100vw - 32px);
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -77,6 +79,19 @@
             text-align: center;
         }
 
+        .switch {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .switch a {
+            color: #4f46e5;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
         .footer {
             margin-top: 30px;
             text-align: center;
@@ -101,6 +116,10 @@
     {% if error %}
         <div class="error">{{ error }}</div>
     {% endif %}
+
+    <div class="switch">
+        아직 계정이 없나요? <a href="{% url 'signup' %}">회원가입</a>
+    </div>
 
     <div class="footer">
         © StudyLens
