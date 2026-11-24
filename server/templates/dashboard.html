@@ -2,134 +2,222 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if current %}<meta http-equiv="refresh" content="60">{% endif %}
     <title>StudyLens | 대시보드</title>
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: "Pretendard", "Noto Sans KR", sans-serif;
-        }
-
-        body {
-            margin: 0;
-            background: #f3f4f6;
-        }
+        * { box-sizing: border-box; font-family: "Pretendard", "Noto Sans KR", sans-serif; }
+        body { margin: 0; background: #f3f4f6; color: #111827; }
 
         header {
-            background: #4f46e5;
-            padding: 20px 40px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: #4f46e5; padding: 18px 32px; color: white;
+            display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        }
+        header h1 { margin: 0; font-size: 22px; }
+        header .user { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+        header button {
+            background: rgba(255,255,255,.15); color: white; border: 0; border-radius: 6px;
+            padding: 6px 12px; cursor: pointer; font-size: 13px;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 22px;
-        }
+        .container { padding: 32px; max-width: 1100px; margin: 0 auto; }
 
-        header span {
-            font-size: 14px;
-            opacity: 0.9;
+        .status {
+            display: flex; align-items: center; gap: 12px;
+            background: white; border-radius: 12px; padding: 18px 24px; margin-bottom: 24px;
+            box-shadow: 0 6px 16px rgba(0,0,0,.06); font-size: 16px;
         }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #9ca3af; flex: none; }
+        .status.on .dot { background: #16a34a; box-shadow: 0 0 0 4px #dcfce7; }
+        .status.distracted .dot { background: #f59e0b; box-shadow: 0 0 0 4px #fef3c7; }
+        .status small { color: #6b7280; }
 
-        .container {
-            padding: 40px;
-        }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .card { background: white; padding: 22px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.06); }
+        .card h3 { margin: 0 0 8px; font-size: 14px; color: #6b7280; font-weight: 600; }
+        .card p { font-size: 28px; font-weight: 700; margin: 0; }
+        .card span { font-size: 13px; color: #6b7280; }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
+        .section { background: white; padding: 26px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.06); margin-bottom: 24px; }
+        .section h2 { margin: 0 0 18px; font-size: 17px; }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-        }
+        .chart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; align-items: end; height: 180px; }
+        .bar { position: relative; height: 140px; display: flex; align-items: flex-end; justify-content: center; }
+        .bar .total { width: 60%; background: #e0e7ff; border-radius: 6px 6px 0 0; position: relative; min-height: 2px; }
+        .bar .focus { position: absolute; bottom: 0; left: 0; right: 0; background: #a5b4fc; border-radius: 6px 6px 0 0; }
+        .bar .total.achieved .focus { background: #16a34a; }
+        .goal-mark { position: absolute; left: -5px; right: -5px; border-top: 2px dashed #f59e0b; pointer-events: none; }
+        .progress { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 10px; }
+        .progress i { display: block; height: 100%; background: #16a34a; border-radius: 999px; }
 
-        .card h3 {
-            margin: 0 0 10px;
-            font-size: 16px;
-            color: #374151;
-        }
+        .hours { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; align-items: end; height: 90px; }
+        .hours div { background: #e0e7ff; border-radius: 3px 3px 0 0; min-height: 2px; }
+        .hours div.best { background: #4f46e5; }
+        .hour-labels { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 11px; color: #9ca3af; margin-top: 4px; }
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 18px 0; }
+        .report-grid div { background: #f9fafb; border-radius: 10px; padding: 14px; }
+        .report-grid b { display: block; font-size: 20px; margin-top: 4px; }
+        .report-grid small { color: #6b7280; font-size: 12px; }
+        .insights { margin: 0; padding-left: 18px; color: #374151; font-size: 14px; line-height: 1.8; }
+        .col { text-align: center; font-size: 12px; color: #6b7280; }
+        .col b { display: block; color: #111827; font-size: 12px; margin-top: 4px; }
+        .legend { display: flex; gap: 16px; font-size: 12px; color: #6b7280; margin-top: 12px; }
+        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 
-        .card p {
-            font-size: 28px;
-            font-weight: bold;
-            color: #111827;
-            margin: 0;
-        }
+        .ranking { list-style: none; margin: 0; padding: 0; }
+        .ranking li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 15px; }
+        .ranking li:last-child { border-bottom: 0; }
+        .ranking .rank { width: 28px; font-weight: 700; color: #4f46e5; text-align: center; }
+        .ranking .name { flex: 1; }
+        .ranking .me { background: #eef2ff; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+        .ranking .live { font-size: 11px; color: #16a34a; background: #dcfce7; border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
+        .ranking .time { font-weight: 600; }
 
-        .section {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-        }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+        .gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,.1); }
+        .placeholder { color: #9ca3af; font-size: 14px; }
 
-        .section h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 18px;
-            color: #111827;
-        }
-
-        .placeholder {
-            color: #9ca3af;
-            font-size: 14px;
+        @media (max-width: 600px) {
+            header, .container { padding: 16px; }
+            .card p { font-size: 22px; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>StudyLens Dashboard</h1>
-    <span>{{ request.user.username }} 님</span>
+    <h1>StudyLens</h1>
+    <div class="user">
+        <span>{{ request.user.username }} 님</span>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">로그아웃</button>
+        </form>
+    </div>
 </header>
 
 <div class="container">
 
+    {% if current %}
+        <div class="status {% if current.is_distracted %}distracted{% else %}on{% endif %}">
+            <div class="dot"></div>
+            <div>
+                {% if current.is_distracted %}
+                    <b>딴짓 감지 중</b> · 공부 {{ current_minutes }}분째
+                {% else %}
+                    <b>지금 공부 중</b> · {{ current_minutes }}분째
+                {% endif %}
+                <small>(이번 세션 집중도 {{ current.focus_rate|default:"-" }}%)</small>
+            </div>
+        </div>
+    {% else %}
+        <div class="status">
+            <div class="dot"></div>
+            <div>지금은 공부 중이 아닙니다 <small>· 책을 펴고 앉으면 자동으로 기록이 시작돼요</small></div>
+        </div>
+    {% endif %}
+
     <div class="cards">
         <div class="card">
-            <h3>오늘 공부 시간</h3>
-            <p>{{ today_minutes }} 분</p>
+            <h3>오늘 순공부 시간</h3>
+            <p>{{ today_focus_minutes }}분 <span>/ 목표 {{ goal_minutes }}분</span></p>
+            <div class="progress"><i style="width: {{ today_goal_rate }}%"></i></div>
+            <span>전체 {{ today_minutes }}분 · 딴짓 {{ today_distracted_minutes }}분</span>
         </div>
-
         <div class="card">
-            <h3>최근 7일 총 공부 시간</h3>
-            <p>{{ week_hours }} 시간</p>
+            <h3>오늘 집중도</h3>
+            <p>{% if today_focus_rate is not None %}{{ today_focus_rate }}%{% else %}-{% endif %}</p>
+            <span>순공부 ÷ 전체 공부 시간</span>
         </div>
-
+        <div class="card">
+            <h3>최근 7일 공부 시간</h3>
+            <p>{{ week_hours }}시간</p>
+            <span>순공부 {{ week_focus_hours }}시간</span>
+        </div>
         <div class="card">
             <h3>오늘 촬영된 이미지</h3>
-            <p>{{ image_count }} 장</p>
+            <p>{{ image_count }}장</p>
         </div>
     </div>
 
-
     <div class="section">
-    <h2>공부 이미지 갤러리</h2>
-
-    {% if images %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px;">
-            {% for img in images %}
-                <img src="{{ img.image.url }}"
-                     style="width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        <h2>최근 7일 · 목표 달성 {{ report.goal.achieved_days }}/{{ report.goal.days }}일</h2>
+        <div class="chart">
+            {% for d in chart %}
+                <div class="col">
+                    <div class="bar">
+                        <div class="goal-mark" style="bottom: {{ goal_line }}%;"></div>
+                        <div class="total{% if d.achieved %} achieved{% endif %}" style="height: {{ d.height }}%;">
+                            <div class="focus" style="height: {{ d.focus_pct }}%;"></div>
+                        </div>
+                    </div>
+                    {{ d.label }}
+                    <b>{{ d.minutes }}분</b>
+                </div>
             {% endfor %}
         </div>
-    {% else %}
-        <div class="placeholder">
-            오늘 촬영된 공부 이미지가 없습니다.
+        <div class="legend">
+            <span><i style="background:#16a34a"></i>순공부 (목표 달성)</span>
+            <span><i style="background:#a5b4fc"></i>순공부 (미달성)</span>
+            <span><i style="background:#e0e7ff"></i>딴짓 포함 전체</span>
+            <span><i style="background:#f59e0b"></i>하루 목표 {{ goal_minutes }}분</span>
         </div>
-    {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>이번 주 리포트 <small style="color:#6b7280;font-weight:400;font-size:13px">{{ report.start }} ~ {{ report.end }}</small></h2>
+
+        <div class="report-grid">
+            <div><small>가장 집중이 잘 되는 시간</small><b>{% if report.best_hours %}{{ report.best_hours.0.label }}{% else %}-{% endif %}</b></div>
+            <div><small>25분+ 연속 집중</small><b>{{ report.deep_focus.count }}회</b></div>
+            <div><small>자리 이탈</small><b>{{ report.away.count }}회</b></div>
+            <div><small>휴대폰 사용</small><b>{{ report.phone.count }}회</b></div>
+            <div><small>연속 공부</small><b>{{ report.streak.current_days }}일</b></div>
+        </div>
+
+        <div class="hours">
+            {% for h in hourly %}<div class="{% if h.best %}best{% endif %}" style="height: {{ h.height }}%" title="{{ h.hour }}시 · {{ h.minutes }}분"></div>{% endfor %}
+        </div>
+        <div class="hour-labels"><span>0시</span><span>6시</span><span>12시</span><span>18시</span></div>
+
+        <ul class="insights" style="margin-top:18px">
+            {% for line in report.insights %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>친구 랭킹 <small style="color:#6b7280;font-weight:400;font-size:13px">최근 7일 순공부</small></h2>
+        {% if ranking %}
+            <ul class="ranking">
+                {% for r in ranking.top %}
+                    <li class="{% if r.is_me %}me{% endif %}">
+                        <span class="rank">{{ r.rank }}</span>
+                        <span class="name">{{ r.username }}{% if r.is_me %} (나){% endif %}{% if r.studying_now %}<span class="live">공부 중</span>{% endif %}</span>
+                        <span class="time">{{ r.focus_minutes }}분</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if ranking.me.rank > 5 %}
+                <div class="placeholder" style="margin-top:10px">내 순위: {{ ranking.me.rank }}위 / {{ ranking.total }}명 · {{ ranking.me.focus_minutes }}분</div>
+            {% endif %}
+        {% else %}
+            <div class="placeholder">아직 친구가 없습니다. 앱에서 친구의 아이디로 친구 요청을 보내 보세요.</div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>오늘의 공부 모습</h2>
+        {% if image_urls %}
+            <div class="gallery">
+                {% for url in image_urls %}
+                    <img src="{{ url }}" alt="공부 중 캡처 이미지" loading="lazy">
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="placeholder">오늘 촬영된 공부 이미지가 없습니다.</div>
+        {% endif %}
+    </div>
+
 </div>
-
-
-</div>
-
 </body>
 </html>

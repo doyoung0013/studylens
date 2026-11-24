@@ -13,19 +13,81 @@ public interface ApiService {
     @POST("api/auth/login/")
     Call<LoginResponse> login(@Body LoginRequest body);
 
+    // 액세스 토큰 갱신
+    @POST("api/auth/refresh/")
+    Call<LoginResponse> refresh(@Body RefreshRequest body);
+
     // 최근 N일 학습 통계
     @GET("api/stats/daily/")
     Call<List<DailyStat>> getDailyStats(@Query("days") int days);
 
-    // 오늘의 이미지 목록
-    @GET("api/gallery/today/")
-    Call<List<StudyImage>> getTodayGallery();
+    // 기간 학습 통계 (start, end: yyyy-MM-dd)
+    @GET("api/stats/daily/")
+    Call<List<DailyStat>> getStatsRange(@Query("start") String start, @Query("end") String end);
 
-    // 특정 날짜 이미지 목록
-    @GET("api/study/images/")
-    Call<List<StudyImage>> getImages(
-            @Query("day") int day
-    );
+    // 특정 날짜 이미지 목록 (date: yyyy-MM-dd)
+    @GET("api/gallery/")
+    Call<List<StudyImage>> getGallery(@Query("date") String date);
 
+    // 실시간 상태 (지금 공부 중인지, 몇 분째인지)
+    @GET("api/study/current/")
+    Call<CurrentStatus> getCurrent();
 
+    // 학습 리포트 (period: today | week | month) — 집중 시간대, 25분+ 연속 집중, 이탈 빈도 등
+    @GET("api/study/report/")
+    Call<ReportResponse> getReport(@Query("period") String period);
+
+    // ================= 회원가입 / 내 정보 =================
+
+    @POST("api/auth/signup/")
+    Call<SignupResponse> signup(@Body SignupRequest body);
+
+    @GET("api/me/")
+    Call<MeResponse> getMe();
+
+    // 하루 목표 순공부 시간(분) 변경
+    @PATCH("api/me/goal/")
+    Call<GoalBody> updateGoal(@Body GoalBody body);
+
+    // ================= 친구 =================
+
+    @GET("api/friends/requests/")
+    Call<FriendRequests> getFriendRequests();
+
+    @POST("api/friends/requests/")
+    Call<MessageResponse> sendFriendRequest(@Body SocialBodies.Username body);
+
+    /** action: accept | reject | cancel */
+    @POST("api/friends/requests/{id}/{action}/")
+    Call<MessageResponse> friendRequestAction(@Path("id") long requestId, @Path("action") String action);
+
+    @DELETE("api/friends/{userId}/")
+    Call<Void> deleteFriend(@Path("userId") long userId);
+
+    /** period: today | week | month */
+    @GET("api/friends/ranking/")
+    Call<RankingResponse> getFriendRanking(@Query("period") String period);
+
+    // ================= 스터디 그룹 =================
+
+    @GET("api/groups/")
+    Call<List<StudyGroup>> getGroups();
+
+    @POST("api/groups/")
+    Call<StudyGroup> createGroup(@Body SocialBodies.CreateGroup body);
+
+    @POST("api/groups/join/")
+    Call<StudyGroup> joinGroup(@Body SocialBodies.InviteCode body);
+
+    @GET("api/groups/{id}/")
+    Call<StudyGroup> getGroup(@Path("id") long groupId);
+
+    @POST("api/groups/{id}/leave/")
+    Call<MessageResponse> leaveGroup(@Path("id") long groupId);
+
+    @POST("api/groups/{id}/invite-code/")
+    Call<InviteCodeResponse> regenerateInviteCode(@Path("id") long groupId);
+
+    @GET("api/groups/{id}/ranking/")
+    Call<RankingResponse> getGroupRanking(@Path("id") long groupId, @Query("period") String period);
 }

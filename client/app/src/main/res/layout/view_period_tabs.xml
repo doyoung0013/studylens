@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 랭킹 기간 선택 탭 (PeriodTabs 에서 사용) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:layout_marginBottom="12dp">
+
+    <TextView
+        android:id="@+id/tabToday"
+        android:text="오늘"
+        style="@style/PeriodTab"/>
+
+    <TextView
+        android:id="@+id/tabWeek"
+        android:text="최근 7일"
+        android:layout_marginStart="8dp"
+        style="@style/PeriodTab"/>
+
+    <TextView
+        android:id="@+id/tabMonth"
+        android:text="이번 달"
+        android:layout_marginStart="8dp"
+        style="@style/PeriodTab"/>
+</LinearLayout>

@@ -41,6 +41,30 @@
             android:name=".ui.StudyGalleryActivity"
             android:exported="false" />
 
+        <!-- 회원가입 -->
+        <activity
+            android:name=".ui.SignupActivity"
+            android:exported="false" />
+
+        <!-- 친구 랭킹 -->
+        <activity
+            android:name=".ui.FriendsActivity"
+            android:exported="false" />
+
+        <!-- 스터디 그룹 -->
+        <activity
+            android:name=".ui.GroupsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.GroupDetailActivity"
+            android:exported="false" />
+
+        <!-- 학습 리포트 -->
+        <activity
+            android:name=".ui.ReportActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

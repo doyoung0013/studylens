@@ -20,6 +20,8 @@
             android:orientation="horizontal">
 
             <ImageView
+                android:id="@+id/btnPrevMonth"
+                android:contentDescription="이전 달"
                 android:src="@drawable/ic_back"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
@@ -27,7 +29,8 @@
                 app:tint="#1F2937"/>
 
             <TextView
-                android:text="12월 학습 현황"
+                android:id="@+id/tvMonthTitle"
+                android:text="학습 현황"
                 android:textStyle="bold"
                 android:textSize="18sp"
                 android:textColor="#111827"
@@ -37,14 +40,61 @@
                 android:layout_height="wrap_content" />
 
             <ImageView
-                android:src="@drawable/ic_share"
+                android:id="@+id/btnNextMonth"
+                android:contentDescription="다음 달"
+                android:rotationY="180"
+                android:src="@drawable/ic_back"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:padding="4dp"
                 app:tint="#1F2937"/>
         </LinearLayout>
 
-        <!-- 2. 오늘의 학습 -->
+        <!-- 1-1. 실시간 상태 (GET /api/study/current/) -->
+        <LinearLayout
+            android:id="@+id/liveStatusBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/rounded_white"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <View
+                android:id="@+id/liveDot"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/bg_live_idle"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvLiveStatus"
+                    android:text="상태 확인 중..."
+                    android:textColor="#111827"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/tvLiveDetail"
+                    android:text=""
+                    android:textColor="#6B7280"
+                    android:textSize="13sp"
+                    android:layout_marginTop="2dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 2. 선택한 날짜의 학습 -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -73,6 +123,7 @@
                         app:tint="#4ADE80"/>
 
                     <TextView
+                        android:id="@+id/tvCardTitle"
                         android:text="오늘의 학습"
                         android:textColor="#F3F4F6"
                         android:textStyle="bold"
@@ -92,7 +143,7 @@
                     <!-- 서버 연동 -->
                     <TextView
                         android:id="@+id/tvTodayMinutes"
-                        android:text="9"
+                        android:text="0"
                         android:textSize="52sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
@@ -100,7 +151,8 @@
                         android:layout_height="wrap_content"/>
 
                     <TextView
-                        android:text="/ 60분"
+                        android:id="@+id/tvGoal"
+                        android:text="분 순공부 / 목표 60분 ✎"
                         android:textSize="20sp"
                         android:textColor="#9CA3AF"
                         android:layout_marginStart="8dp"
@@ -119,6 +171,16 @@
                     android:progress="0"
                     android:progressDrawable="@drawable/progress_custom"
                     android:backgroundTint="#374151"/>
+
+                <!-- 집중도 (전체 / 딴짓 / 집중도%) -->
+                <TextView
+                    android:id="@+id/tvFocusInfo"
+                    android:text="전체 0분 · 딴짓 0분 · 집중도 -"
+                    android:textColor="#9CA3AF"
+                    android:textSize="13sp"
+                    android:layout_marginTop="12dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -164,7 +226,8 @@
                         android:layout_height="wrap_content" />
 
                     <TextView
-                        android:text="2025.12"
+                        android:id="@+id/tvMonthBadge"
+                        android:text=""
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:textColor="#15803d"
@@ -233,166 +296,103 @@
                 </LinearLayout>
 
                 <!-- 날짜 Grid -->
+                <!-- 날짜 Grid: HomeActivity 가 선택한 달에 맞춰 동적으로 생성 -->
                 <LinearLayout
                     android:id="@+id/calendarGrid"
                     android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <!-- Week 1 -->
-                    <LinearLayout
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"/>
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <TextView
-                                android:text="1"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:gravity="center"
-                                android:layout_gravity="center"/>
-                        </FrameLayout>
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <TextView
-                                android:text="2"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:gravity="center"
-                                android:layout_gravity="center"/>
-                        </FrameLayout>
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <TextView
-                                android:text="3"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:gravity="center"
-                                android:layout_gravity="center"/>
-                        </FrameLayout>
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <TextView
-                                android:text="4"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:gravity="center"
-                                android:layout_gravity="center"/>
-                        </FrameLayout>
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <TextView
-                                android:text="5"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:gravity="center"
-                                android:layout_gravity="center"/>
-                        </FrameLayout>
-
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-                            <TextView
-                                android:text="6"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
-                                android:gravity="center"
-                                android:layout_gravity="center"/>
-                        </FrameLayout>
-                    </LinearLayout>
-
-                    <!-- Week 2 -->
-                    <LinearLayout
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="7"  android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="8"  android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="9"  android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="10" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="11" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="12" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="13" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                    </LinearLayout>
-
-                    <!-- Week 3 -->
-                    <LinearLayout
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="14" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="15" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="16" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="17" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="18" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="19" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="20" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                    </LinearLayout>
-
-                    <!-- Week 4 -->
-                    <LinearLayout
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="21" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="22" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="23" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="24" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="25" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="26" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="27" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                    </LinearLayout>
-
-                    <!-- Week 5 -->
-                    <LinearLayout
-                        android:orientation="horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="28" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="29" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="30" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"><TextView android:text="31" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:layout_gravity="center"/></FrameLayout>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-                        <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-                    </LinearLayout>
-
-
-                </LinearLayout>
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <!-- 3-1. 최근 7일 목표 달성률 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:text="최근 7일 목표 달성"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1F2937"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/tvGoalSummary"
+                    android:text=""
+                    android:textSize="13sp"
+                    android:textColor="#6B7280"
+                    android:layout_marginTop="4dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <com.studylens.client.ui.BarChartView
+                    android:id="@+id/goalChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="160dp"
+                    android:layout_marginTop="16dp"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btnReport"
+            android:text="📊 학습 리포트 보기"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="#4F46E5"/>
 
         <Button
             android:id="@+id/btnGallery"
             android:text="나의 공부 모습 보러가기"
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:layout_marginTop="20dp"/>
+            android:layout_marginTop="12dp"/>
+
+        <!-- 4. 친구 / 스터디 그룹 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnFriends"
+                android:text="친구 랭킹"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="56dp"
+                android:backgroundTint="#16A34A"/>
+
+            <Button
+                android:id="@+id/btnGroups"
+                android:text="스터디 그룹"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="56dp"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#111827"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnLogout"
+            android:text="로그아웃"
+            android:textColor="#9CA3AF"
+            android:padding="12dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 </ScrollView>

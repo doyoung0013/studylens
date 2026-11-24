@@ -40,6 +40,16 @@ public class LoginActivity extends AppCompatActivity {
                 .getClient(getApplicationContext())
                 .create(ApiService.class);
 
+        // 이미 로그인한 적이 있으면 바로 홈으로 (토큰이 만료됐으면 홈에서 자동 갱신/재로그인)
+        if (Prefs.getToken(this) != null) {
+            startActivity(new Intent(this, HomeActivity.class));
+            finish();
+            return;
+        }
+
+        findViewById(R.id.btnSignup).setOnClickListener(v ->
+                startActivity(new Intent(this, SignupActivity.class)));
+
         loginBtn.setOnClickListener(v -> {
             if (!isLoggingIn) {
                 doLogin();
@@ -67,8 +77,8 @@ public class LoginActivity extends AppCompatActivity {
 
                 if (res.isSuccessful() && res.body() != null) {
 
-                    // ✅ access token 저장
-                    Prefs.saveToken(LoginActivity.this, res.body().access);
+                    // ✅ access / refresh token 저장
+                    Prefs.saveTokens(LoginActivity.this, res.body().access, res.body().refresh);
 
                     startActivity(
                             new Intent(LoginActivity.this, HomeActivity.class)

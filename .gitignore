@@ -58,3 +58,6 @@ local.properties
 *.ap_
 *.aab
 google-services.json
+
+# StudyLens edge offline queue
+edge_queue/
