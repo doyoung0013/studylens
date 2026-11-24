@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F9FAFB">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:text="학습 리포트"
+            style="@style/ScreenTitle"/>
+
+        <TextView
+            android:id="@+id/tvReportRange"
+            android:textColor="#6B7280"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <include layout="@layout/view_period_tabs"/>
+
+        <!-- 요약 카드 2 x 2 -->
+        <LinearLayout
+            android:id="@+id/statRow1"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:id="@+id/statRow2"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- 한 줄 요약 -->
+        <TextView
+            android:text="💡 한 줄 요약"
+            style="@style/SectionTitle"/>
+
+        <LinearLayout
+            android:id="@+id/insightContainer"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_white"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- 목표 달성 -->
+        <TextView
+            android:text="🎯 하루 목표 달성"
+            style="@style/SectionTitle"/>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:background="@drawable/rounded_white"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tvGoalReport"
+                android:textColor="#374151"
+                android:textSize="14sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <com.studylens.client.ui.BarChartView
+                android:id="@+id/reportGoalChart"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginTop="12dp"/>
+        </LinearLayout>
+
+        <!-- 집중 시간대 -->
+        <TextView
+            android:text="⏰ 집중이 잘 되는 시간대"
+            style="@style/SectionTitle"/>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:background="@drawable/rounded_white"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tvBestHours"
+                android:textColor="#374151"
+                android:textSize="14sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <com.studylens.client.ui.BarChartView
+                android:id="@+id/hourlyChart"
+                android:layout_width="match_parent"
+                android:layout_height="140dp"
+                android:layout_marginTop="12dp"/>
+        </LinearLayout>
+
+        <!-- 25분 이상 연속 집중 -->
+        <TextView
+            android:text="🔥 25분 이상 연속 집중"
+            style="@style/SectionTitle"/>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:background="@drawable/rounded_white"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tvDeepSummary"
+                android:textColor="#374151"
+                android:textSize="14sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <LinearLayout
+                android:id="@+id/deepContainer"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- 자리 이탈 / 휴대폰 -->
+        <TextView
+            android:text="🚶 자리 이탈 · 📱 휴대폰"
+            style="@style/SectionTitle"/>
+
+        <LinearLayout
+            android:id="@+id/statRow3"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>

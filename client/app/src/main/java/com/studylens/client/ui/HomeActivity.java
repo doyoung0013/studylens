@@ -107,6 +107,7 @@ public class HomeActivity extends AppCompatActivity {
         btnFriends.setOnClickListener(v -> startActivity(new Intent(this, FriendsActivity.class)));
         findViewById(R.id.btnGroups).setOnClickListener(v -> startActivity(new Intent(this, GroupsActivity.class)));
         findViewById(R.id.btnLogout).setOnClickListener(v -> goToLogin());
+        findViewById(R.id.btnReport).setOnClickListener(v -> startActivity(new Intent(this, ReportActivity.class)));
 
         buildCalendar();
         loadMonthStats();

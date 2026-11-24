@@ -60,6 +60,11 @@
             android:name=".ui.GroupDetailActivity"
             android:exported="false" />
 
+        <!-- 학습 리포트 -->
+        <activity
+            android:name=".ui.ReportActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

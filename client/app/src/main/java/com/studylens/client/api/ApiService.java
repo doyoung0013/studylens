@@ -33,6 +33,10 @@ public interface ApiService {
     @GET("api/study/current/")
     Call<CurrentStatus> getCurrent();
 
+    // 학습 리포트 (period: today | week | month) — 집중 시간대, 25분+ 연속 집중, 이탈 빈도 등
+    @GET("api/study/report/")
+    Call<ReportResponse> getReport(@Query("period") String period);
+
     // ================= 회원가입 / 내 정보 =================
 
     @POST("api/auth/signup/")

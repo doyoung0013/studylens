@@ -346,6 +346,14 @@
         </androidx.cardview.widget.CardView>
 
         <Button
+            android:id="@+id/btnReport"
+            android:text="📊 학습 리포트 보기"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="#4F46E5"/>
+
+        <Button
             android:id="@+id/btnGallery"
             android:text="나의 공부 모습 보러가기"
             android:layout_width="match_parent"
